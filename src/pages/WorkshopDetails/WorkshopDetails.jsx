@@ -299,7 +299,35 @@ export default function WorkshopDetails() {
                       handleRegister();
                     } else {
                       // Use React Router navigation and pass workshop in state
-                      navigate("/checkout", { state: { workshop } });
+                      navigate("/checkout", {
+                        state: {
+                          isWorkshop: true,
+                          sessionId: workshop._id,
+                          sessionTitle: workshop.title,
+                          sessionImage: workshop.image,
+                          sessionPrice: workshop.price,
+                          sessionType: workshop.type,
+                          mentorId: workshop.mentor?._id,
+                          mentorName: workshop.mentor?.name,
+                          mentorTitle: "Mentor",
+                          slot: {
+                            date: new Date(workshop.date)
+                              .toISOString()
+                              .split("T")[0],
+                            day: new Date(workshop.date).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "long",
+                                timeZone: "Africa/Cairo",
+                              }
+                            ),
+                            time: {
+                              start: workshop.time,
+                              end: null,
+                            },
+                          },
+                        },
+                      });
                     }
                   }}
                   disabled={registering}
