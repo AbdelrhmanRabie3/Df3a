@@ -72,3 +72,46 @@ export const deleteUser = async (userId) => {
     throw error;
   }
 };
+
+// Suspend a user
+export const suspendUser = async (userId) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const response = await axios.patch(`${URL}/users/${userId}/suspend`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error suspending user:", error);
+    throw error;
+  }
+};
+
+// Unsuspend a user
+export const unsuspendUser = async (userId) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const response = await axios.patch(`${URL}/users/${userId}/unsuspend`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error unsuspending user:", error);
+    throw error;
+  }
+};
+
+// Get mentor by ID
+export const getMentorById = async (id) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const response = await axios.get(`${URL}/mentors/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching mentor by ID:", error);
+    throw error;
+  }
+};
+

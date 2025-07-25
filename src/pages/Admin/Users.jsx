@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Sidebar from '../../components/Admin/Sidebar'
 import Navbar from '../../components/Admin/Navbar'
 import { getAllUsers } from '../../services/getAllData'
-import { deleteUser } from '../../services/adminServices';
+import { deleteUser, suspendUser, unsuspendUser } from '../../services/adminServices';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -10,15 +10,16 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [limit] = useState(10); // You can make this adjustable if you want
-  const [total, setTotal] = useState(0);
+  const [filteredRole, setFilteredRole] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response = await getAllUsers(page, limit);
-        setUsers(response.users || []); // Only store the users array
-        setTotal(response.pagination?.totalUsers || 0); // Use backend pagination property
+        const response = await getAllUsers(1, 1000); // Fetch all users at once
+        setUsers(response.users || []);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
@@ -26,11 +27,14 @@ export default function Users() {
       }
     };
     fetchUsers();
-  }, [page, limit]);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filteredRole, search]);
   console.log(users);
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
       await deleteUser(userId);
       setUsers(users => users.filter(u => u._id !== userId));
@@ -39,29 +43,69 @@ export default function Users() {
     }
   };
   
-  // Exclude admin users before applying search filter
-  const filteredUsers = users
+  const handleToggleSuspend = async (userId, currentlySuspended) => {
+    try {
+      if (currentlySuspended) {
+        await unsuspendUser(userId);
+      } else {
+        await suspendUser(userId);
+      }
+      setUsers(users =>
+        users.map(u =>
+          u._id === userId ? { ...u, suspended: !currentlySuspended } : u
+        )
+      );
+    } catch {
+      alert('Failed to update suspension status.');
+    }
+  };
+
+  // Filter the full users list before paginating
+  const allFilteredUsers = users
     .filter(user => user.role !== "admin")
     .filter(user =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
-      user.role.toLowerCase().includes(search.toLowerCase())
+      (filteredRole ? user.role === filteredRole : true) &&
+      (
+        user.name.toLowerCase().includes(search.toLowerCase()) ||
+        user.email.toLowerCase().includes(search.toLowerCase()) ||
+        user.role.toLowerCase().includes(search.toLowerCase())
+      )
     );
 
+  // Paginate the filtered list
+  const paginatedUsers = allFilteredUsers.slice((page - 1) * limit, page * limit);
+
   // Use backend totalPages if available
-  const totalPages = users.length === 0 ? 1 : (users.length && (users.length < limit) ? page : (users.length === limit && total ? Math.ceil(total / limit) : (total ? Math.ceil(total / limit) : 1)));
+  const totalPages = allFilteredUsers.length === 0 ? 1 : Math.ceil(allFilteredUsers.length / limit);
   // Or simply:
   // const totalPages = response.pagination?.totalPages || Math.ceil(total / limit) || 1;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <>
       <Navbar />
-      <div className="flex flex-1">
+      <div>
+        <div className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-80 z-30">
         <Sidebar />
-        <main className="flex-1 p-8">
+        </div>
+        <div className="ml-80 min-h-screen bg-background">
+          <main className="p-8">
           <div className="bg-surface shadow-lg rounded-lg p-8 transition-theme">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
               <h1 className="text-2xl font-bold text-primary">Users</h1>
+            </div>
+            <div className="mb-6 flex items-center gap-4">
+              <label htmlFor="role-filter" className="text-sm font-medium text-white bg-green-800 px-2 py-1 rounded-3xl">Filter by Role:</label>
+              <select
+                id="role-filter"
+                className="input-field px-4 py-2 rounded border"
+                value={filteredRole}
+                onChange={e => setFilteredRole(e.target.value)}
+              >
+                <option value="">All Roles</option>
+                <option value="student">Student</option>
+                <option value="mentor">Mentor</option>
+                {/* Add more roles if needed */}
+              </select>
             </div>
             <div className="mb-6">
               <div className="relative">
@@ -87,11 +131,11 @@ export default function Users() {
                     <th className="p-4 text-sm font-semibold text-primary">Email</th>
                     <th className="p-4 text-sm font-semibold text-primary">Role</th>
                     <th className="p-4 text-sm font-semibold text-primary">Phone Number</th>
-                      <th className="p-4 text-sm font-semibold text-secondary">Actions</th>
+                      <th className="p-4 text-sm font-semibold text-secondary text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <tr key={user._id}>
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center">
@@ -103,13 +147,13 @@ export default function Users() {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-primary">
+                            <div className={`text-sm font-medium text-primary ${user.suspended ? 'line-through text-gray-400' : ''}`}> 
                               {user.name}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-4 typography_body whitespace-nowrap">{user.email}</td>
+                      <td className={`p-4 typography_body whitespace-nowrap ${user.suspended ? 'line-through text-gray-400' : ''}`}>{user.email}</td>
                     <td className="p-4 typography_body whitespace-nowrap">
                       <span
                            className={`px-2 py-1 text-xs font-semibold rounded-full
@@ -125,11 +169,23 @@ export default function Users() {
                            {user.phoneNumber}
                          </span>
                     </td>
-                      <td className="whitespace-nowrap px-6 py-4 flex gap-2">
+                      <td className="whitespace-nowrap px-6 py-4 flex gap-2 justify-center items-center">
+                        <button
+                          className={`p-1 rounded hover:bg-gray-100 ${user.suspended ? 'opacity-60' : ''}`}
+                          title={user.suspended ? 'Unsuspend' : 'Suspend'}
+                          onClick={() => handleToggleSuspend(user._id, user.suspended)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`size-6 ${user.suspended ? 'text-red-600' : 'text-green-600'}` }>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                        </button>
                         <button
                           className="p-1 rounded hover:bg-red-100"
                           title="Delete"
-                          onClick={() => handleDeleteUser(user._id)}
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setDeleteModalOpen(true);
+                          }}
                         >
                           {/* Delete icon (heroicon) */}
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-red-600">
@@ -144,7 +200,7 @@ export default function Users() {
               {/* Pagination Controls */}
               <div className="flex justify-between items-center mt-4">
                 <button
-                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50 cursor-pointer"
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1 || loading}
                 >
@@ -154,7 +210,7 @@ export default function Users() {
                   Page {page} of {totalPages || 1}
                 </span>
                 <button
-                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50 cursor-pointer"
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages || loading || totalPages === 0}
                 >
@@ -164,8 +220,45 @@ export default function Users() {
             </div>
           </div>
         </main>
+        </div>
       </div>
-    </div>
-  )
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full relative flex flex-col items-center">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-red-600 text-2xl font-bold"
+              onClick={() => setDeleteModalOpen(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-bold text-primary mb-4">Delete User</h2>
+            <p className="mb-6 text-center text-secondary">
+              Are you sure you want to delete <span className="font-semibold text-primary">{userToDelete?.name}</span>?
+            </p>
+            <div className="flex gap-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 text-primary hover:bg-gray-300"
+                onClick={() => setDeleteModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={async () => {
+                  await handleDeleteUser(userToDelete._id);
+                  setDeleteModalOpen(false);
+                  setUserToDelete(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 

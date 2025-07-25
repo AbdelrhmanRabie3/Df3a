@@ -127,19 +127,13 @@ export default function Sidebar() {
             {/* Reports Icon */}
             <svg
               className="text-brand"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
+              fill="currentColor"
               viewBox="0 0 24 24"
-              width="24px"
               height="24px"
+              width="24px"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 21V5a2 2 0 0 1 2-2h11.382a2 2 0 0 1 1.789 1.106l.447.894A2 2 0 0 0 20.618 6H21a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-1.382a2 2 0 0 0-1.789 1.106l-.447.894A2 2 0 0 1 16.382 21H5a2 2 0 0 1-2-2Z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} stroke="currentColor" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
             </svg>
             <p className="text-sm font-medium">Reports</p>
           </NavLink>

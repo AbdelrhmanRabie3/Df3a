@@ -47,11 +47,14 @@ export default function AdminWorkshops() {
   const totalPages = Math.ceil(filteredWorkshops.length / limit);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <>
       <Navbar />
-      <div className="flex flex-1">
+      <div>
+        <div className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-80 z-30">
         <Sidebar />
-        <main className="flex-1 p-8">
+        </div>
+        <div className="ml-80 min-h-screen bg-background">
+          <main className="p-8">
           <div className="bg-surface shadow-lg rounded-lg p-8 transition-theme">
             <header className="flex justify-between items-center mb-8">
               <h1 className="text-2xl font-bold text-primary">Workshops Management</h1>
@@ -153,7 +156,7 @@ export default function AdminWorkshops() {
             {totalPages > 0 && (
               <div className="flex justify-between items-center mt-4">
                 <button
-                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50 cursor-pointer"
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
                 >
@@ -163,7 +166,7 @@ export default function AdminWorkshops() {
                   Page {page} of {totalPages || 1}
                 </span>
                 <button
-                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded bg-accent text-white disabled:opacity-50 cursor-pointer"
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages}
                 >
@@ -175,5 +178,6 @@ export default function AdminWorkshops() {
         </main>
       </div>
     </div>
+    </>
   );
 }
