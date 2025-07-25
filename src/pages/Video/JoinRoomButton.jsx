@@ -7,6 +7,7 @@ export default function JoinVideoRoomButton({
   token,
   isAvailable,
   type,
+  className,
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -21,19 +22,18 @@ export default function JoinVideoRoomButton({
       setLoading(false);
     }
   };
-
+  const baseStyle =
+    !isAvailable || loading
+      ? "bg-gray-400 cursor-not-allowed text-primary"
+      : "btn-primary btn-primary:hover";
   return (
     <>
       <button
         onClick={handleJoin}
         disabled={!isAvailable || loading}
-        className={`w-2/3 ${
-          !isAvailable || loading
-            ? "bg-gray-400 cursor-not-allowed text-primary"
-            : "bg-purple-600 hover:bg-purple-800 text-white"
-        }  font-medium px-6 py-3 rounded-full transition duration-200 mt-2`}
+        className={`w-2/3 font-medium px-6 py-3 rounded-full transition duration-200 mt-2 ${baseStyle} ${className}`}
       >
-        {loading ? "Loading..." : "🎥 Join Meeting Room"}
+        {loading ? "Loading..." : "🎥 Start"}
       </button>
       {!isAvailable && (
         <p className="text-sm text-gray-500 mt-1">
