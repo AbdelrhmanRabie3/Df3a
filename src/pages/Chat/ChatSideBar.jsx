@@ -23,8 +23,7 @@ const ChatSidebar = ({
   });
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-      {/* Search bar - keep existing */}
+    <div className="w-80 bg-background border-r border-gray-200 flex flex-col">
 
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto">
@@ -44,8 +43,8 @@ const ChatSidebar = ({
               <div
                 key={chat._id}
                 onClick={() => handleChatSelect(chat)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  isActive ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
+                className={`p-4 border-default  border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  isActive ? "bg-primary border-l-4 !border-l-blue-500" : ""
                 } ${hasUnread && !isActive ? "bg-blue-25" : ""}`}
               >
                 <div className="flex items-center justify-between">
@@ -68,9 +67,9 @@ const ChatSidebar = ({
                       <div className="flex items-center justify-between">
                         <h3
                           className={`font-medium truncate ${
-                            hasUnread
-                              ? "text-gray-900 font-semibold"
-                              : "text-gray-700"
+                            hasUnread 
+                              ? "text-primary font-bold"
+                              : "text-primary"
                           }`}
                         >
                           {otherUser.name ||
@@ -86,15 +85,15 @@ const ChatSidebar = ({
                         <div className="flex items-center flex-1 min-w-0">
 
                           {isUserLastSender && (
-                            <span className="text-sm text-gray-500 mr-1">
+                            <span className="text-sm text-primary mr-1">
                               You:{" "}
                             </span>
                           )}
                           <p
                             className={`text-sm truncate ${
                               hasUnread && !isUserLastSender
-                                ? "text-gray-900 font-medium"
-                                : "text-gray-500"
+                                ? "text-primary font-bold"
+                                : "text-primary"
                             }`}
                           >
                             {chat.latestMessage?.content || "No messages yet"}

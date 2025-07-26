@@ -1,9 +1,8 @@
 import axios from "axios";
-
+import Cookies from "js-cookie";
 const URL = "http://localhost:5000/api";
 
-const getToken = () =>
-  sessionStorage.getItem("token") || localStorage.getItem("token");
+const getToken = () => Cookies.get("token");
 
 export const createReview = async ({
   targetType,

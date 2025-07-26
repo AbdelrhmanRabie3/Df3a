@@ -9,7 +9,6 @@ import {
   fetchAvailability,
 } from "../../services/profileService";
 import "react-calendar/dist/Calendar.css";
-import TimePicker from "react-time-picker";
 import "react-time-picker/dist/TimePicker.css";
 import "react-clock/dist/Clock.css";
 
@@ -240,6 +239,7 @@ const MentorAvailability = () => {
 
           <div className="mb-6 bg-surface">
             <Calendar
+          
               onClickDay={(value) => setSelectedDate(value)}
               tileDisabled={({ date }) => {
                 const today = new Date();

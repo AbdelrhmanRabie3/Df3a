@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router";
 import { AuthContext } from "../../contexts/AuthContextProvider";
 import { fetchWorkshopById } from "../../services/workshopService";
 import { createReport, hasUserReported } from "../../services/reportService";
+import JoinVideoRoomButton from "../Video/JoinRoomButton";
+import Cookies from "js-cookie";
 
 export default function StudentProfile() {
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ export default function StudentProfile() {
   const [studentBookings, setStudentBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [actionLoading, setActionLoading] = useState({}); // { [bookingId]: true/false }
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState(null); // user being reported
   const [reportWorkshop, setReportWorkshop] = useState(null); // workshop context
@@ -108,7 +110,7 @@ export default function StudentProfile() {
 
   // Activity summary
   const sessionsAttended = studentBookings.filter(
-    (b) => b.status === "confirmed"
+    (b) => b.attendStatus === "confirmed"
   ).length;
   const activity = {
     sessions: sessionsAttended,
@@ -124,6 +126,17 @@ export default function StudentProfile() {
     // If timeStr is not in HH:mm format, adjust parsing as needed
     const sessionDateTime = new Date(`${dateStr}T${timeStr}`);
     return new Date() > sessionDateTime;
+  }
+
+  function isBookingCancelable(booking) {
+    if (!booking.date || !booking.timeSlot?.length) return false;
+    const dateStr = booking.date;
+    const timeStr = booking.timeSlot[0].start;
+    const sessionDateTime = new Date(`${dateStr}T${timeStr}`);
+    const now = new Date();
+    const diffMs = sessionDateTime - now;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours >= 24;
   }
 
   if (!user) {
@@ -373,18 +386,18 @@ export default function StudentProfile() {
                           </p>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
-                          {booking.status === "confirmed" ||
-                          booking.status === "cancelled" ? (
+                          {booking.attendStatus === "confirmed" ||
+                          booking.attendStatus === "cancelled" ? (
                             <>
                               <button
                                 className={
-                                  booking.status === "confirmed"
+                                  booking.attendStatus === "confirmed"
                                     ? "btn-primary px-4 py-2 rounded cursor-not-allowed opacity-60 pointer-events-none"
                                     : "btn-secondary px-4 py-2 rounded cursor-not-allowed opacity-60 pointer-events-none"
                                 }
                                 disabled
                               >
-                                {booking.status === "confirmed"
+                                {booking.attendStatus === "confirmed"
                                   ? "Completed"
                                   : "Cancelled"}
                               </button>
@@ -413,7 +426,7 @@ export default function StudentProfile() {
                             </>
                           ) : (
                             <>
-                              <div className="relative group inline-block">
+                              <div className="relative group  w-full flex justify-center mx-auto">
                                 <button
                                   className={`btn-primary px-4 py-2 rounded ${
                                     !isBookingPast(booking)
@@ -437,18 +450,61 @@ export default function StudentProfile() {
                                   </span>
                                 )}
                               </div>
-                              <button
-                                className="btn-secondary px-4 py-2 rounded"
-                                disabled={actionLoading[booking._id]}
-                                onClick={() => {
-                                  setCancelTargetBooking(booking._id);
-                                  setCancelModalOpen(true);
-                                }}
-                              >
-                                {actionLoading[booking._id]
-                                  ? "Processing..."
-                                  : "Cancel"}
-                              </button>
+                              <div className="relative group  w-full flex justify-center mx-auto">
+                                <button
+                                  type="button"
+                                  className={`btn-secondary px-4 py-2 rounded ${
+                                    !isBookingCancelable(booking)
+                                      ? "cursor-not-allowed opacity-60 pointer-events-none"
+                                      : ""
+                                  }`}
+                                  disabled={
+                                    actionLoading[booking._id] ||
+                                    !isBookingCancelable(booking)
+                                  }
+                                  onClick={() => {
+                                    setCancelTargetBooking(booking._id);
+                                    setCancelModalOpen(true);
+                                  }}
+                                >
+                                  {actionLoading[booking._id]
+                                    ? "Processing..."
+                                    : "Cancel"}
+                                </button>
+                                {!isBookingCancelable(booking) && (
+                                  <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-max bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                    You can only cancel at least 24 hours before
+                                    the session.
+                                  </span>
+                                )}
+                              </div>
+                              {/* Join Meeting Room Button for bookings that are not cancelled */}
+                              {booking.attendStatus !== "cancelled" &&
+                                booking.attendStatus !== "confirmed" &&
+                                booking.timeSlot &&
+                                booking.timeSlot.length > 0 && (
+                                  <JoinVideoRoomButton
+                                    className="w-[100%]"
+                                    RoomId={booking._id}
+                                    StartTime={booking.timeSlot[0].start}
+                                    token={token || Cookies.get("token")}
+                                    isAvailable={(() => {
+                                      if (
+                                        !booking.date ||
+                                        !booking.timeSlot?.length
+                                      )
+                                        return false;
+                                      const dateStr = booking.date;
+                                      const timeStr = booking.timeSlot[0].start;
+                                      const sessionDateTime = new Date(
+                                        `${dateStr}T${timeStr}`
+                                      );
+                                      return new Date() >= sessionDateTime;
+                                    })()}
+                                    type="booking"
+                                    buttonClassName="btn-primary px-4 py-2 rounded"
+                                  />
+                                )}
                             </>
                           )}
                         </div>
@@ -503,12 +559,37 @@ export default function StudentProfile() {
                           >
                             View Workshop
                           </button>
+
+                          {/* Join Meeting Room Button */}
+                          {workshop.status !== "completed" && (
+                            <div className="flex text-xs justify-center">
+                              <JoinVideoRoomButton
+                                className="w-[50%]"
+                                RoomId={workshop._id}
+                                StartTime={workshop.time}
+                                token={token || Cookies.get("token")}
+                                isAvailable={(() => {
+                                  if (!workshop?.date || !workshop?.time)
+                                    return false;
+                                  const startTime = new Date(
+                                    `${workshop.date.split("T")[0]}T${
+                                      workshop.time
+                                    }:00`
+                                  );
+                                  return new Date() >= startTime;
+                                })()}
+                                type="workshop"
+                              />
+                            </div>
+                          )}
+
                           {reportedWorkshops[workshop._id] === null ||
                           reportedWorkshops[workshop._id] === undefined ? (
                             <span className="text-secondary text-xs ml-2">
                               Checking...
                             </span>
-                          ) : !reportedWorkshops[workshop._id] ? (
+                          ) : !reportedWorkshops[workshop._id] &&
+                            workshop.status === "completed" ? (
                             <button
                               className="btn-danger px-2 py-1 rounded mt-2"
                               onClick={() =>
@@ -517,11 +598,12 @@ export default function StudentProfile() {
                             >
                               Report Mentor
                             </button>
-                          ) : (
+                          ) : reportedWorkshops[workshop._id] &&
+                            workshop.status === "completed" ? (
                             <span className="text-green-600 font-semibold text-xs ml-2">
                               Reported
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     ))}

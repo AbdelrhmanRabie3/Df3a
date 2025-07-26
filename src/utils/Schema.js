@@ -43,7 +43,6 @@ export const forgotPasswordSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email format"),
 });
 
-
 export const MentorProfileSchema = z.object({
   languages: z.array(z.string()).min(1, "At least one language is required"),
   expertise: z.array(z.string()).min(1, "At least one skill is required"),
@@ -76,38 +75,43 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-export const CreateWorkshopSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  date: z.string().min(1, "Date is required"),
-  time: z.string().min(1, "Time is required"),
-  duration: z.union([
-    z.string().min(1, "Duration is required"),
-    z.number().min(1, "Duration is required")
-  ]),
-  topic: z.string().min(1, "Topic is required"),
-  price: z.union([
-    z.string().min(1, "Price is required"),
-    z.number()
-  ]),
-  language: z.string().min(1, "Language is required"),
-  type: z.string().min(1, "Type is required"),
-  location: z.string().optional(), // will refine below
-  capacity: z.union([
-    z.string().min(1, "Capacity is required"),
-    z.number().min(1, "Capacity is required")
-  ]),
-  image: z.any().optional(),
-}).refine(
-  (data) => {
-    // Location required if type is 'on-site' or 'offline'
-    if (data.type === 'on-site' || data.type === 'offline') {
-      return !!data.location && data.location.trim() !== '';
+export const CreateWorkshopSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, "Title is required")
+      .max(100, "Title must be less than 100 characters"),
+    description: z
+      .string()
+      .min(10, "Description is required")
+      .max(1000, "Description must be less than 1000 characters"),
+    date: z.string().min(1, "Date is required"),
+    time: z.string().min(1, "Time is required"),
+    duration: z.union([
+      z.string().min(1, "Duration is required"),
+      z.number().min(1, "Duration is required"),
+    ]),
+    topic: z.string().min(1, "Topic is required"),
+    price: z.union([z.string().min(1, "Price is required"), z.number()]),
+    language: z.string().min(1, "Language is required"),
+    type: z.string().min(1, "Type is required"),
+    location: z.string().optional(), // will refine below
+    capacity: z.union([
+      z.string().min(1, "Capacity is required"),
+      z.number().min(1, "Capacity is required"),
+    ]),
+    image: z.any().optional(),
+  })
+  .refine(
+    (data) => {
+      // Location required if type is 'on-site' or 'offline'
+      if (data.type === "on-site" || data.type === "offline") {
+        return !!data.location && data.location.trim() !== "";
+      }
+      return true;
+    },
+    {
+      message: "Location is required for offline workshops",
+      path: ["location"],
     }
-    return true;
-  },
-  {
-    message: "Location is required for offline workshops",
-    path: ["location"],
-  }
-);
+  );

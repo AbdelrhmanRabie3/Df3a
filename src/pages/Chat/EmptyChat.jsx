@@ -43,5 +43,5 @@ function EmptyChat({ setSidebarOpen }) {
     </div>
   );
 }
-
+//
 export default EmptyChat;

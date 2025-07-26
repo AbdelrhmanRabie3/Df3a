@@ -3,7 +3,7 @@ import { UserContext } from "../../contexts/ProfileContext";
 import { editUserProfile } from "../../services/profileService";
 import { StudentProfileSchema } from "../../utils/Schema";
 import { AuthContext } from "../../contexts/AuthContextProvider";
-
+import Cookies from "js-cookie";
 export default function StudentProfileForm({  isRegistered }) {
   const { user } = useContext(AuthContext);
   const { refreshUser } = useContext(UserContext);
@@ -74,8 +74,7 @@ export default function StudentProfileForm({  isRegistered }) {
     // If it's a Cloudinary object, it should have public_id
     if (cvToRemove && typeof cvToRemove === "object" && cvToRemove.public_id) {
       try {
-        const token =
-          localStorage.getItem("token") || sessionStorage.getItem("token");
+        const token = Cookies.get("token");
 
         await fetch("http://localhost:5000/api/students/delete-cv", {
           method: "DELETE",
@@ -104,8 +103,7 @@ export default function StudentProfileForm({  isRegistered }) {
     const formData = new FormData();
     formData.append("cv", file);
 
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = Cookies.get("token");
 
     const res = await fetch("http://localhost:5000/api/students/upload-cv", {
       method: "POST",

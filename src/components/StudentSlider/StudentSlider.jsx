@@ -50,18 +50,18 @@ export default function StudentSlider({
             <span className="mb-2 font-semibold text-primary text-sm">
               {student.name}
             </span>
-            {!reportedMap[student._id] ? (
+            {!reportedMap[student._id] && workshop.status === "completed" ? (
               <button
                 className="btn-danger px-2 py-1 rounded text-xs mt-1"
                 onClick={() => handleOpenReportModal(student, workshop)}
               >
                 Report Student
               </button>
-            ) : (
+            ) : reportedMap[student._id] && workshop.status === "completed" ? (
               <span className="text-green-600 font-semibold text-xs mt-1">
                 Reported
               </span>
-            )}
+            ) : null}
           </div>
         ))}
       </div>

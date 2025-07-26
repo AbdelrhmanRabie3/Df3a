@@ -4,28 +4,38 @@ import {
   resetPassword as resetPasswordService,
   updatePassword as updatePasswordService,
 } from "../services/authService";
-
+import Cookies from "js-cookie";
 export const AuthContext = createContext();
 function AuthContextProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+    const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem("user") || sessionStorage.getItem("user") || null;
-    const storedToken =
-      localStorage.getItem("token") || sessionStorage.getItem("token") || null;
+    const initializeAuth = () => {
+      try {
+        const storedUser = 
+          Cookies.get("user") || null
+          
+        const storedToken = 
+          Cookies.get("token") ||null
 
-    console.log("Stored User:", storedUser);
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      console.log("User set from localStorage:", user);
-    }
+        if (storedToken) {
+          setToken(storedToken);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        Cookies.remove("user");
+        Cookies.remove("token");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (storedToken) {
-      setToken(storedToken);
-      console.log("Token set from localStorage:", token);
-    }
+    initializeAuth();
   }, []);
 
   // Handler for forgot password
@@ -61,6 +71,7 @@ function AuthContextProvider({ children }) {
         value={{
           user,
           setUser,
+          loading,
           token,
           setToken,
           forgotPassword,

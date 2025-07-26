@@ -13,24 +13,20 @@
     "@clerk/clerk-react": "^5.35.3",
     "@hookform/resolvers": "^5.1.1",
     "@livekit/components-react": "^2.9.14",
-
     "@livekit/components-styles": "^1.1.6",
-
     "@stripe/react-stripe-js": "^3.8.0",
     "@stripe/stripe-js": "^7.6.1",
-
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/react-query": "^5.83.0",
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
     "flowbite": "^3.1.2",
     "i18next": "^25.3.1",
+    "js-cookie": "^3.0.5",
     "livekit-client": "^2.15.3",
     "react": "^19.1.0",
-
-    "react-chartjs-2": "^5.3.0",
-
     "react-calendar": "^6.0.0",
-
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.60.0",
     "react-hot-toast": "^2.5.2",

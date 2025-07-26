@@ -1,8 +1,8 @@
-const URL = "http://localhost:5000";
 import axios from "axios";
+import Cookies from "js-cookie";
+const URL = "http://localhost:5000";
 
-const getToken = () =>
-  sessionStorage.getItem("token") || localStorage.getItem("token");
+const getToken = () => Cookies.get("token");
 
 // Fetch current user profile (by token) or by userId
 export const fetchUserProfile = async (userId) => {
@@ -85,7 +85,7 @@ export const confirmBookingHandler = async (bookingId) => {
   try {
     const token = getToken();
     const res = await axios.patch(
-      `${URL}/api/bookings/${bookingId}/confirm`,
+      `${URL}/api/bookings/${bookingId}/confirmattend`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -102,8 +102,18 @@ export const confirmBookingHandler = async (bookingId) => {
 export const cancelBookingHandler = async (bookingId) => {
   try {
     const token = getToken();
-    const res = await axios.patch(
-      `${URL}/api/bookings/${bookingId}/cancel`,
+    const url = `${URL}/api/bookings/cancel/${bookingId}`;
+    console.log("Cancel booking for ID:", bookingId);
+    console.log("Request URL:", url);
+    console.log("Token present:", !!token);
+    if (!bookingId) {
+      throw new Error("No bookingId provided to cancelBookingHandler");
+    }
+    if (!token) {
+      throw new Error("No auth token found for cancelBookingHandler");
+    }
+    const res = await axios.post(
+      url,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -111,8 +121,15 @@ export const cancelBookingHandler = async (bookingId) => {
     );
     return res.data;
   } catch (err) {
-    console.error("Cancel Booking Error:", err);
-    return null;
+    if (err.response) {
+      console.error(
+        "Cancel Booking Error (backend response):",
+        err.response.data
+      );
+    } else {
+      console.error("Cancel Booking Error:", err);
+    }
+    throw err;
   }
 };
 

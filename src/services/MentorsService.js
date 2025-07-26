@@ -1,12 +1,12 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 const URL = "http://localhost:5000/api";
+
 export const getMentorById = async (id) => {
   try {
     const response = await axios.get(`${URL}/mentors/${id}`, {
       headers: {
-        Authorization: `Bearer ${
-          localStorage.getItem("token") || sessionStorage.getItem("token")
-        }`,
+        Authorization: `Bearer ${Cookies.get("token")}`,
       },
     });
     return response.data;
@@ -20,13 +20,11 @@ export const getRecommendedMentors = async () => {
   try {
     const response = await axios.get(`${URL}/ai/student/recommendations`, {
       headers: {
-        Authorization: `Bearer ${
-          localStorage.getItem("token") || sessionStorage.getItem("token")
-        }`,
+        Authorization: `Bearer ${Cookies.get("token")}`,
       },
     });
     console.log("Recommended mentors:", response.data);
-    
+
     return response.data;
   } catch (error) {
     console.error("Error fetching recommended mentors:", error);

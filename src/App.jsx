@@ -42,8 +42,8 @@ const stripePromise = loadStripe('pk_test_51RmdgG09P07SloujIB7Lr6qnAmEyfMxyhJBaV
 
 import Reports from "./pages/Admin/Reports";
 
-
 function App() {
+
   return (
     <>
       <ToastContainer autoClose={3000} />

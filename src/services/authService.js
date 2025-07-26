@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const URL = "http://localhost:5000/api/auth";
 
 export const signUp = async (userData) => {

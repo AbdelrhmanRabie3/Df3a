@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import Cookies from "js-cookie";
 const URL = "http://localhost:5000/api/workshops";
 
 export const fetchWorkshops = async () => {
@@ -25,8 +25,7 @@ export const fetchWorkshopById = async (id) => {
 
 export const createWorkshop = async (workshopData) => {
   try {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = Cookies.get("token");
     const response = await axios.post(URL, workshopData, {
       headers: {
         "Content-Type": "application/json",
@@ -51,8 +50,7 @@ export const fetchWorkshopDetails = async (id) => {
 };
 
 export const registerToWorkshop = async (id) => {
-  const token =
-    sessionStorage.getItem("token") || localStorage.getItem("token");
+  const token = Cookies.get("token");
   try {
     const response = await axios.post(
       `${URL}/${id}/register`,
@@ -71,8 +69,7 @@ export const registerToWorkshop = async (id) => {
 };
 
 export const markWorkshopAsCompleted = async (id) => {
-  const token =
-    sessionStorage.getItem("token") || localStorage.getItem("token");
+  const token = Cookies.get("token");
   try {
     const response = await axios.patch(
       `${URL}/${id}/completed`,

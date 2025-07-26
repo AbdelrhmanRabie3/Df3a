@@ -12,20 +12,24 @@ import { toast } from "react-toastify";
 import NavBar from "../../components/NavBar/NavBar";
 import Footer from "../../components/Footer/Footer";
 import "react-toastify/dist/ReactToastify.css";
-import { createPaidSession } from "../../services/bookingServices"; // Assuming your service call here
+import { createPaidSession } from "../../services/bookingServices";
 import axiosInstance from "../../services/axios";
+import { AuthContext } from "../../contexts/AuthContextProvider";
+
 import { AuthContext } from "../../contexts/AuthContextProvider";
 
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const stripe = useStripe();
   const elements = useElements();
-  const { user } = useContext(AuthContext);
+  // let user = {};
 
   const {
     slot,
+    time,
     mentorId,
     sessionTitle,
     sessionImage,
@@ -36,12 +40,14 @@ const Checkout = () => {
     sessionType,
     isWorkshop,
     sessionId,
+    workshopId,
   } = location.state || {};
 
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
 
   useEffect(() => {
+    // user = JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user"));
     const fetchClientSecret = async () => {
       try {
         // Send request to backend to get the client secret
@@ -106,7 +112,6 @@ const Checkout = () => {
           },
         }
       );
-
       if (error) {
         toast.error(error.message || "Payment failed", {
           position: "top-center",
@@ -116,27 +121,46 @@ const Checkout = () => {
 
       if (paymentIntent.status === "succeeded") {
         // Call backend to create the booking
-        const bookingData = {
-          mentorId,
-          date: slot.date,
-          slots: [slot.time],
-          type: "online",
-          duration: 60,
-          amount: Number(sessionPrice),
-          paymentIntentId: paymentIntent.id,
-        };
-
-        const bookingResponse = await createPaidSession(bookingData);
-
-        if (bookingResponse.data?.success) {
-          toast.success("Booking successful! Your session is confirmed.", {
-            position: "top-center",
-          });
-          navigate("/studentProfile");
+        if (isWorkshop) {
+          const response = await axiosInstance.post(
+            "/workshops/paid-register",
+            {
+              workshopId: workshopId,
+              paymentIntentId: paymentIntent.id,
+            }
+          );
+          console.log(response);
+          if (response.data.success) {
+            toast.success("Booking successful! Your workshop is confirmed.", {
+              position: "top-center",
+            });
+            navigate("/studentProfile");
+          } else {
+            toast.error("Booking failed after payment", {
+              position: "top-center",
+            });
+          }
         } else {
-          toast.error("Booking saved failed after payment", {
-            position: "top-center",
-          });
+          const bookingData = {
+            mentorId,
+            date: slot.date,
+            slots: [slot.time],
+            type: "online",
+            duration: 60,
+            amount: Number(sessionPrice),
+            paymentIntentId: paymentIntent.id,
+          };
+          const bookingResponse = await createPaidSession(bookingData);
+          if (bookingResponse.data?.success) {
+            toast.success("Booking successful! Your session is confirmed.", {
+              position: "top-center",
+            });
+            navigate("/studentProfile");
+          } else {
+            toast.error("Booking saved failed after payment", {
+              position: "top-center",
+            });
+          }
         }
       }
     } catch (error) {
@@ -153,7 +177,6 @@ const Checkout = () => {
     <div className="max-w-4xl mx-auto p-6">
       <NavBar />
       <h2 className="text-2xl font-bold text-primary mb-6">Checkout</h2>
-
       <section className="grid md:grid-cols-2 gap-6">
         {/* Left Column: Booking Summary */}
         <div className="space-y-6">
@@ -170,7 +193,7 @@ const Checkout = () => {
                 />
                 <div>
                   <p className="font-semibold text-lg text-primary">
-                    {isWorkshop ? sessionTitle : `Session with ${mentorName}`}
+                    {isWorkshop ? mentorName : `Session with ${mentorName}`}
                   </p>
                   <p className="text-sm text-secondary">{mentorTitle}</p>
                 </div>
@@ -179,7 +202,9 @@ const Checkout = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-secondary">Date:</span>
-                  <span className="font-medium text-primary">{slot?.date}</span>
+                  <span className="font-medium text-primary">
+                    {isWorkshop ? slot : slot?.date}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-secondary">Day:</span>
@@ -188,7 +213,9 @@ const Checkout = () => {
                 <div className="flex justify-between">
                   <span className="text-secondary">Time:</span>
                   <span className="font-medium text-primary">
-                    {slot?.time.start} - {slot?.time.end}
+                    {isWorkshop
+                      ? time
+                      : `${slot?.time.start} - ${slot?.time.end}`}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -218,7 +245,6 @@ const Checkout = () => {
             </div>
           </div>
         </div>
-
         {/* Right Column: Card Details */}
         <div>
           <div className="bg-surface p-6 rounded-xl shadow-lg border border-default">
@@ -244,7 +270,6 @@ const Checkout = () => {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block mb-1 text-sm font-medium text-secondary">
@@ -264,7 +289,6 @@ const Checkout = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block mb-1 text-sm font-medium text-secondary">
                     CVC
@@ -284,7 +308,6 @@ const Checkout = () => {
                   </div>
                 </div>
               </div>
-
               <div className="mt-6">
                 <button
                   type="submit"

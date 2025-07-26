@@ -6,7 +6,7 @@ import { resetPasswordSchema } from "../../utils/Schema";
 import { useContext, useState } from "react";
 import { AuthContext } from "../../contexts/AuthContextProvider";
 import { useLocation, useParams } from "react-router";
-
+import Cookies from "js-cookie";
 function ResetPassword() {
   const {
     register,

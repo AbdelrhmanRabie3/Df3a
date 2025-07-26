@@ -1,12 +1,14 @@
 import axios from "axios";
-
+import Cookies from "js-cookie";
 const URL = "http://localhost:5000/api";
-const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+const getToken = () => {
+  return Cookies.get("token");
+};
 export const getAllUserChats = async () => {
   try {
     const response = await axios.get(`${URL}/chats`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${getToken()}`,
       },
     });
     return response.data;
@@ -23,7 +25,7 @@ export const getOneToOneChat = async (userId) => {
       { userId },
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
       }
     );
@@ -41,7 +43,7 @@ export const sendNewMessage = async (content, chatId) => {
       { content, chatId },
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
       }
     );
@@ -56,7 +58,7 @@ export const getChatMessages = async (chatId) => {
   try {
     const response = await axios.get(`${URL}/messages/${chatId}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${getToken()}`,
       },
     });
     return response.data;
@@ -67,11 +69,15 @@ export const getChatMessages = async (chatId) => {
 };
 export const markMessageAsRead = async (chatId) => {
   try {
-    const response = await axios.put(`${URL}/chats/mark-read/${chatId}`,{}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await axios.put(
+      `${URL}/chats/mark-read/${chatId}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error marking message as read:", error);

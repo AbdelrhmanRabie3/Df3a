@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { useContext, useState } from "react";
 import { signin } from "../../services/authService";
 import { AuthContext } from "../../contexts/AuthContextProvider";
-
+import Cookies from "js-cookie";
 function Login() {
   const navigate = useNavigate();
   const [KeptSignIn, setKeptSignIn] = useState(false);
@@ -27,11 +27,15 @@ function Login() {
     try {
       const response = await signin(data);
       if (KeptSignIn) {
-        localStorage.setItem("user", JSON.stringify(response.user));
-        localStorage.setItem("token", response.token);
+        Cookies.set("user", JSON.stringify(response.user), {
+          expires: 30,
+        });
+        Cookies.set("token", response.token, {
+          expires: 30,
+        });
       } else {
-        sessionStorage.setItem("user", JSON.stringify(response.user));
-        sessionStorage.setItem("token", response.token);
+        Cookies.set("user", JSON.stringify(response.user));
+        Cookies.set("token", response.token);
       }
 
       setUser(response.user);

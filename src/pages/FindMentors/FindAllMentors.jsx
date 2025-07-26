@@ -1,4 +1,3 @@
-
 import MentorCard from "./MentorCard";
 import { useContext, useEffect, useState } from "react";
 import { getAllMentors } from "../../services/getAllData";
@@ -7,11 +6,32 @@ import { AuthContext } from "../../contexts/AuthContextProvider";
 import { getRecommendedMentors } from "../../services/MentorsService";
 import { IoSearch } from "react-icons/io5";
 import { getArrayFromNumbers } from "../../utils/Numbers";
+import { useQuery } from "@tanstack/react-query";
+
+export const fetchMentorsData = async (user) => {
+  const allMentors = await getAllMentors();
+
+  if (user?.isRegistered && user?.role === "student") {
+    const recommended = await getRecommendedMentors();
+    const recommendedList = recommended.data.recommendedMentors;
+
+    const remainingMentors = allMentors.filter(
+      (mentor) => !recommendedList.find((r) => r._id === mentor._id)
+    );
+
+    return {
+      recommended: recommendedList,
+      mentors: remainingMentors,
+    };
+  }
+
+  return {
+    recommended: [],
+    mentors: allMentors,
+  };
+};
 
 function FindAllMentors() {
-  const [mentors, setMentors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [recommendedMentors, setRecommendedMentors] = useState([]);
   const { user } = useContext(AuthContext);
   const [filteredExpertise, setFilteredExpertise] = useState("");
   const [filteredIndustry, setFilteredIndustry] = useState("");
@@ -21,37 +41,21 @@ function FindAllMentors() {
   const [filteredRating, setFilteredRating] = useState("");
   useEffect(() => {
     setActivePage(1);
-  }, [filteredExpertise, filteredIndustry, filteredPrice, searchQuery, filteredRating]);
-  useEffect(() => {
+  }, [
+    filteredExpertise,
+    filteredIndustry,
+    filteredPrice,
+    searchQuery,
+    filteredRating,
+  ]);
 
-    const fetchMentors = async () => {
-      setLoading(true);
-      try {
-        const allMentors = await getAllMentors();
-        if (user.isRegistered && user.role === "student") {
-          const recommended = await getRecommendedMentors();
-          const recommendedList = recommended.data.recommendedMentors;
-          const remainingMentors = allMentors.filter(
-            (mentor) =>
-              !recommendedList.find(
-                (recommended) => recommended._id === mentor._id
-              )
-          );
-          setRecommendedMentors(recommendedList);
-          setMentors(remainingMentors);
-        } else {
-          setMentors(allMentors);
-
-        }
-      } catch (error) {
-        console.error("Failed to fetch mentors:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMentors();
-  }, []);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["mentors", user],
+    queryFn: () => fetchMentorsData(user),
+    enabled: !!user,
+  });
+  const mentors = data?.mentors || [];
+  const recommendedMentors = data?.recommended || [];
 
   //Filters Select
   const allMentors = [...recommendedMentors, ...mentors];
@@ -100,7 +104,7 @@ function FindAllMentors() {
   const start = (activePage - 1) * pageSize;
   const end = start + pageSize;
   filteredMentors = filteredMentors.slice(start, end);
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
   return (
@@ -153,7 +157,9 @@ function FindAllMentors() {
           id=""
           onChange={(e) => setFilteredPrice(e.target.value)}
         >
-          <option className="" value="">Select Price</option>
+          <option className="" value="">
+            Select Price
+          </option>
           <option value="free">Free</option>
           <option value="paid">Paid</option>
         </select>
@@ -185,10 +191,11 @@ function FindAllMentors() {
             <span
               onClick={() => setActivePage(page)}
               key={page}
-              className={`text-sm font-bold cursor-pointer leading-normal flex size-10 items-center justify-center text-white rounded-full ${activePage === page
-                ? "bg-primary"
-                : "bg-surface border border-default text-primary hover-primary hover:!text-white "
-                }`}
+              className={`text-sm font-bold cursor-pointer leading-normal flex size-10 items-center justify-center text-white rounded-full ${
+                activePage === page
+                  ? "bg-primary"
+                  : "bg-surface border border-default text-primary hover-primary hover:!text-white "
+              }`}
             >
               {page}
             </span>

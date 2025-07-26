@@ -5,24 +5,20 @@ import { FaEnvelope, FaSun } from "react-icons/fa";
 import { IoMoon } from "react-icons/io5";
 import { AuthContext } from "../../contexts/AuthContextProvider";
 import { ChatContext } from "../../contexts/ChatContextProvider";
-
+import Cookies from "js-cookie";
 function NavBar() {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const { user, setUser, setToken } = useContext(AuthContext);
   const { getTotalUnreadCount } = useContext(ChatContext);
   const unreadCount = getTotalUnreadCount();
-  const loggenInUser = JSON.parse(
-    sessionStorage.getItem("user") || localStorage.getItem("user")
-  );
+  const loggenInUser = JSON.parse(Cookies.get("user") || null);
   const handleLogout = () => {
     setUser(null);
     setToken(null);
     navigate("/");
-    sessionStorage.removeItem("user");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("token");
-    localStorage.removeItem("token");
+    Cookies.remove("user");
+    Cookies.remove("token");
   };
   return (
     <>
@@ -50,7 +46,6 @@ function NavBar() {
           <div className="flex md:order-2  md:ms-0 items-center md:gap-4 space-x-3 md:space-x-0 rtl:space-x-reverse">
             {user ? (
               <>
-
                 <div className="relative">
                   <Link to={"/chat"}>
                     <FaEnvelope
@@ -169,22 +164,7 @@ function NavBar() {
                   Workshops
                 </NavLink>
               </li>
-              {loggenInUser?.role === "student" && (
-                <Link
-                  to={"/studentprofile"}
-                  className="block py-2 px-3 font-poppins text-base font-medium link-primary link-primary:hover md:p-0  "
-                >
-                  Profile
-                </Link>
-              )}
-              {loggenInUser?.role === "mentor" && (
-                <Link
-                  to={"/mentordashboard"}
-                  className="block py-2 px-3 font-poppins text-base font-medium link-primary link-primary:hover md:p-0  "
-                >
-                  Dashboard
-                </Link>
-              )}
+             
             </ul>
           </div>
         </div>

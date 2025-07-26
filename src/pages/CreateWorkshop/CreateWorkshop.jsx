@@ -42,6 +42,7 @@ export default function CreateWorkshop() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
 
@@ -51,6 +52,33 @@ export default function CreateWorkshop() {
       ...prev,
       [name]: type === "file" ? files[0] : value,
     }));
+    // Validate the single field and clear error if valid
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      // Prepare a minimal data object for validation
+      let fieldValue = type === "file" ? files[0] : value;
+      let data = { ...form, [name]: fieldValue };
+      // Special handling for dateTime (split into date/time)
+      if (name === "dateTime") {
+        const [d, t] = fieldValue.split("T");
+        data.date = d;
+        data.time = t ? t.slice(0, 5) : "";
+      }
+      // Use the schema to validate the single field
+      const parsed = CreateWorkshopSchema.safeParse(data);
+      if (
+        parsed.success ||
+        !parsed.error.errors.find((err) => err.path[0] === name)
+      ) {
+        delete newErrors[name];
+        // Also clear date/time errors if dateTime is being edited
+        if (name === "dateTime") {
+          delete newErrors.date;
+          delete newErrors.time;
+        }
+      }
+      return newErrors;
+    });
   };
 
   const handleTypeChange = (e) => {
@@ -62,6 +90,19 @@ export default function CreateWorkshop() {
           ? prev.location
           : "",
     }));
+    // Validate the type field and clear error if valid
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      let data = { ...form, workshopType: e.target.value };
+      const parsed = CreateWorkshopSchema.safeParse(data);
+      if (
+        parsed.success ||
+        !parsed.error.errors.find((err) => err.path[0] === "type")
+      ) {
+        delete newErrors.type;
+      }
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -69,6 +110,7 @@ export default function CreateWorkshop() {
     setLoading(true);
     setError("");
     setSuccess("");
+    setErrors({});
     try {
       let date = "";
       let time = "";
@@ -100,10 +142,16 @@ export default function CreateWorkshop() {
       // Validate using CreateWorkshopSchema
       const parsed = CreateWorkshopSchema.safeParse(data);
       if (!parsed.success) {
-        setError(parsed.error.errors[0].message);
+        // Map errors to fields
+        const fieldErrors = {};
+        parsed.error.errors.forEach((err) => {
+          fieldErrors[err.path[0]] = err.message;
+        });
+        setErrors(fieldErrors);
         setLoading(false);
         return;
       }
+      setErrors({});
       await createWorkshop(data);
       setSuccess("Workshop created successfully!");
       setTimeout(() => navigate("/workshops"), 1200);
@@ -119,6 +167,21 @@ export default function CreateWorkshop() {
     form.coverImage && typeof form.coverImage === "object"
       ? URL.createObjectURL(form.coverImage)
       : null;
+
+  // Calculate tomorrow's date in YYYY-MM-DDTHH:MM format for min attribute
+  const getTomorrowDateTimeLocal = () => {
+    const now = new Date();
+    now.setDate(now.getDate() + 1);
+    now.setSeconds(0, 0);
+    // Format as YYYY-MM-DDTHH:MM
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  };
+  const minDateTime = getTomorrowDateTimeLocal();
 
   return (
     <main className=" mx-auto z-10 bg-surface backdrop-blur-sm pb-4 px-6 rounded pt-12">
@@ -148,6 +211,9 @@ export default function CreateWorkshop() {
                 placeholder="e.g., Mastering Digital Marketing"
                 type="text"
               />
+              {errors.title && (
+                <div className="text-red-500 text-xs mt-1">{errors.title}</div>
+              )}
             </div>
             <div>
               <label
@@ -164,6 +230,11 @@ export default function CreateWorkshop() {
                 onChange={handleChange}
                 placeholder="Provide a detailed description of your workshop. Cover the topics, learning objectives, and what students can expect."
               />
+              {errors.description && (
+                <div className="text-red-500 text-xs mt-1">
+                  {errors.description}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label
@@ -179,7 +250,18 @@ export default function CreateWorkshop() {
                     value={form.dateTime}
                     onChange={handleChange}
                     type="datetime-local"
+                    min={minDateTime}
                   />
+                  {errors.date && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.date}
+                    </div>
+                  )}
+                  {errors.time && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.time}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -205,6 +287,11 @@ export default function CreateWorkshop() {
                     <option value="120">120 minutes (2 hours)</option>
                     <option value="180">180 minutes (3 hours)</option>
                   </select>
+                  {errors.duration && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.duration}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -228,6 +315,11 @@ export default function CreateWorkshop() {
                       <option key={cat}>{cat}</option>
                     ))}
                   </select>
+                  {errors.topic && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.topic}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -246,6 +338,11 @@ export default function CreateWorkshop() {
                     placeholder="e.g., 25"
                     type="number"
                   />
+                  {errors.capacity && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.capacity}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -253,12 +350,10 @@ export default function CreateWorkshop() {
                     className="form-label text-primary block"
                     htmlFor="price"
                   >
-                    Price (EGB)
+                    Price (EGP)
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-primary">
-                      $
-                    </span>
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-primary"></span>
                     <input
                       className="bg-input border-input border text-primary text-sm rounded-md px-4 py-3 block w-full pl-8"
                       id="price"
@@ -269,6 +364,11 @@ export default function CreateWorkshop() {
                       type="number"
                     />
                   </div>
+                  {errors.price && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.price}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -289,6 +389,11 @@ export default function CreateWorkshop() {
                       <option key={lang}>{lang}</option>
                     ))}
                   </select>
+                  {errors.language && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.language}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label
@@ -307,6 +412,11 @@ export default function CreateWorkshop() {
                     <option value="online">Online</option>
                     <option value="on-site">On-site</option>
                   </select>
+                  {errors.type && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.type}
+                    </div>
+                  )}
                 </div>
 
                 {form.workshopType === "on-site" && (
@@ -326,6 +436,11 @@ export default function CreateWorkshop() {
                       placeholder="e.g., Cairo, Egypt"
                       type="text"
                     />
+                    {errors.location && (
+                      <div className="text-red-500 text-xs mt-1">
+                        {errors.location}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -334,7 +449,7 @@ export default function CreateWorkshop() {
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg bg-input">
                 <div className="space-y-1 text-center">
                   <LuImageUp className="mx-auto h-12 w-12 text-primary" />
-                  <div className="flex text-sm text-secondary">
+                  <div className="flex text-sm text-secondary justify-center">
                     <label
                       className="relative cursor-pointer rounded-md font-medium text-primary underline"
                       htmlFor="file-upload"
@@ -349,7 +464,6 @@ export default function CreateWorkshop() {
                         onChange={handleChange}
                       />
                     </label>
-                    <p className="pl-1">or drag and drop</p>
                   </div>
                   <p className="text-xs text-secondary">PNG, JPG up to 5MB</p>
                 </div>
@@ -439,7 +553,7 @@ export default function CreateWorkshop() {
                   >
                     {form.price === "" || form.price === "0"
                       ? "Free"
-                      : `$${form.price}`}
+                      : `${form.price} EGP`}
                   </span>
                   <div className="flex items-center">
                     <div

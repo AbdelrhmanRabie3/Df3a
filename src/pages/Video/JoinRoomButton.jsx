@@ -28,18 +28,20 @@ export default function JoinVideoRoomButton({
       : "btn-primary btn-primary:hover";
   return (
     <>
-      <button
-        onClick={handleJoin}
-        disabled={!isAvailable || loading}
-        className={`w-2/3 font-medium px-6 py-3 rounded-full transition duration-200 mt-2 ${baseStyle} ${className}`}
-      >
-        {loading ? "Loading..." : "🎥 Start"}
-      </button>
-      {!isAvailable && (
-        <p className="text-sm text-gray-500 mt-1">
-          This button will be active when the meeting starts at {StartTime}
-        </p>
-      )}
+      <div className="relative group  w-full flex justify-center mx-auto">
+        <button
+          onClick={handleJoin}
+          // disabled={!isAvailable || loading}
+          className={`  font-medium px-6 py-3 rounded-full transition duration-200 mt-2 ${baseStyle} ${className}`}
+        >
+          {loading ? "Loading..." : "🎥 Start"}
+        </button>
+        {!isAvailable && (
+          <p className="text-sm text-gray-500 mt-1 absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-max bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            This button will be active when the meeting starts at {StartTime}
+          </p>
+        )}
+      </div>
     </>
   );
 }

@@ -1,12 +1,9 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../contexts/AuthContextProvider";
-import {
-  sendNewMessage,
-  getChatMessages,
-} from "../../services/chatServices";
+import { sendNewMessage, getChatMessages } from "../../services/chatServices";
 import EmptyChat from "./EmptyChat";
-import MessageInput from "./ChatInput";
-import MessageList from "./ChatMessages";
+import MessageInput from "./MessageInput";
+import MessageList from "./MessageList";
 import ChatSidebar from "./ChatSideBar";
 import NavBar from "./../../components/NavBar/NavBar";
 import { ChatContext } from "../../contexts/ChatContextProvider";
@@ -25,18 +22,17 @@ function Chat() {
   const [typingUser, setTypingUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
-
   const {
     currentChat,
     setCurrentChat,
     chats,
     setChats,
+    chatsLoading,
     addNotification,
     clearNotificationsForChat,
     getUnreadStatusForChat,
     markChatAsRead,
   } = useContext(ChatContext);
-
 
   useEffect(() => {
     if (user?._id) {
@@ -50,27 +46,23 @@ function Chat() {
     }
   }, [user]);
 
-
   useEffect(() => {
     selectedChatCompare = currentChat;
     setLoading(false);
   }, [currentChat]);
 
-
+  // Handle socket events
   useEffect(() => {
     if (socket) {
       const handleMessageReceived = (newMessageReceived) => {
         const chatId = newMessageReceived.chat._id;
 
         if (!selectedChatCompare || selectedChatCompare._id !== chatId) {
-
           console.log("New message in different chat:", newMessageReceived);
-
 
           if (newMessageReceived.sender._id !== user._id) {
             addNotification(newMessageReceived);
           }
-
 
           setChats((prevChats) =>
             prevChats.map((chat) =>
@@ -82,17 +74,15 @@ function Chat() {
                       readBy:
                         newMessageReceived.sender._id === user._id
                           ? [user._id]
-                          : [], 
+                          : [],
                     },
                   }
                 : chat
             )
           );
         } else {
-
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
 
-        
           setChats((prevChats) =>
             prevChats.map((chat) =>
               chat._id === chatId
@@ -100,7 +90,7 @@ function Chat() {
                     ...chat,
                     latestMessage: {
                       ...newMessageReceived,
-                      readBy: [user._id], 
+                      readBy: [user._id],
                     },
                   }
                 : chat
@@ -109,19 +99,38 @@ function Chat() {
         }
       };
 
+      // Handle typing events
+      const handleTyping = (data) => {
+        if (data.user._id !== user._id) {
+          setIsTyping(true);
+          setTypingUser(data.userName);
+        }
+      };
+
+      const handleStopTyping = (data) => {
+        if (data.user._id !== user._id) {
+          setIsTyping(false);
+          setTypingUser("");
+        }
+      };
+
       socket.on("message received", handleMessageReceived);
+      socket.on("typing", handleTyping);
+      socket.on("stop typing", handleStopTyping);
 
       return () => {
         socket.off("message received", handleMessageReceived);
+        socket.off("typing", handleTyping);
+        socket.off("stop typing", handleStopTyping);
       };
     }
   }, [socket, selectedChatCompare, addNotification, setChats, user?._id]);
 
-
   const handleChatSelect = async (chat) => {
     setCurrentChat(chat);
     setSidebarOpen(false);
-
+    setIsTyping(false);
+    setTypingUser("");
     clearNotificationsForChat(chat._id);
 
     if (getUnreadStatusForChat(chat._id)) {
@@ -144,7 +153,13 @@ function Chat() {
     e.preventDefault();
 
     if (newMessage.trim() === "" || !currentChat) return;
-
+    if (socket && currentChat) {
+      socket.emit("stop typing", {
+        room: currentChat._id,
+        user: user,
+        userName: user.name || user.username,
+      });
+    }
     try {
       const res = await sendNewMessage(newMessage, currentChat._id);
       console.log("Message sent:", res);
@@ -159,7 +174,6 @@ function Chat() {
       const existingChat = chats.find((chat) => chat._id === currentChat._id);
 
       if (!existingChat) {
-        
         const newChatForList = {
           _id: currentChat._id,
           chatName: currentChat.chatName,
@@ -167,7 +181,7 @@ function Chat() {
           users: currentChat.users,
           latestMessage: {
             ...res,
-            readBy: [user._id], 
+            readBy: [user._id],
           },
           createdAt: currentChat.createdAt,
           updatedAt: new Date().toISOString(),
@@ -175,7 +189,6 @@ function Chat() {
 
         setChats((prevChats) => [newChatForList, ...prevChats]);
       } else {
-
         setChats((prevChats) =>
           prevChats.map((chat) =>
             chat._id === currentChat._id
@@ -183,7 +196,7 @@ function Chat() {
                   ...chat,
                   latestMessage: {
                     ...res,
-                    readBy: [user._id], 
+                    readBy: [user._id],
                   },
                   updatedAt: new Date().toISOString(),
                 }
@@ -195,18 +208,16 @@ function Chat() {
       console.error("Failed to send message:", error);
     }
   };
-  
+
   const getOtherUser = (chat) => {
     return chat?.users?.find((u) => u._id !== user?._id) || {};
   };
-
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-
 
   const getRelativeTime = (timestamp) => {
     if (!timestamp) return "";
@@ -223,6 +234,43 @@ function Chat() {
     if (diffDays < 7) return `${diffDays}d`;
     return messageDate.toLocaleDateString();
   };
+  // Emit typing events
+  const handleTyping = () => {
+    if (socket && currentChat) {
+      socket.emit("typing", currentChat._id);
+    }
+  };
+
+  const handleStopTyping = () => {
+    if (socket && currentChat) {
+      socket.emit("stop typing", currentChat._id);
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleMessageReceived = (newMessageReceived) => {
+      if (!currentChat || currentChat._id !== newMessageReceived.chat._id) {
+        // Show notification or update UI for new message in different chat
+      } else {
+        setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
+      }
+    };
+    const handleTypingEvent = () => {
+      setIsTyping(true);
+    };
+    const handleStopTypingEvent = () => {
+      setIsTyping(false);
+    };
+    socket.on("message received", handleMessageReceived);
+    socket.on("typing", handleTypingEvent);
+    socket.on("stop typing", handleStopTypingEvent);
+    return () => {
+      socket.off("message received", handleMessageReceived);
+      socket.off("typing", handleTypingEvent);
+      socket.off("stop typing", handleStopTypingEvent);
+    };
+  }, [currentChat]);
 
   return (
     <>
@@ -236,7 +284,7 @@ function Chat() {
           >
             <ChatSidebar
               chats={chats}
-              loading={loading}
+              loading={chatsLoading}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               currentChat={currentChat}
@@ -256,12 +304,15 @@ function Chat() {
                   currentChat={currentChat}
                   getOtherUser={getOtherUser}
                   formatTime={formatTime}
+                  isTyping={isTyping}
                 />
 
                 <MessageInput
                   newMessage={newMessage}
                   setNewMessage={setNewMessage}
                   handleSendMessage={handleSendMessage}
+                  handleTyping={handleTyping}
+                  handleStopTyping={handleStopTyping}
                 />
               </>
             ) : (

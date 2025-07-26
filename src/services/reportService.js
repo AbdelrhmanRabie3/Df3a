@@ -1,7 +1,8 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 const URL = "http://localhost:5000";
-const getToken = () =>
-  sessionStorage.getItem("token") || localStorage.getItem("token");
+
+const getToken = () => Cookies.get("token");
 
 // Create a new report (by student or mentor)
 export async function createReport(reportData) {

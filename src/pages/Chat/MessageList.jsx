@@ -6,13 +6,14 @@ function MessageList({
   currentChat,
   getOtherUser,
   formatTime,
+  isTyping,
+  typingUser,
 }) {
   const messagesEndRef = useRef(null);
   console.log("Rendering MessageList with messages:", messages);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+  }, [messages, isTyping]);
 
   const groupedMessages = messages.reduce((groups, message) => {
     const msgDate = new Date(message.createdAt);
@@ -37,13 +38,12 @@ function MessageList({
 
   return (
     <div className="flex-1 p-4 overflow-y-auto space-y-6">
-      
       {chatStartTime && (
         <div className="text-center text-xs text-secondary mb-2">
           Chat started at {chatStartTime.toLocaleString()}
         </div>
       )}
-     
+
       {Object.entries(groupedMessages).map(([date, dateMessages]) => (
         <div key={date}>
           <div className=" text-center text-xs font-semibold text-secondary my-2">
@@ -99,6 +99,26 @@ function MessageList({
           </div>
         </div>
       ))}
+      {isTyping && (
+        <div className="flex justify-start">
+          <div className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xs">
+            <div className="flex items-center space-x-1">
+              <span className="text-sm">{typingUser} is typing</span>
+              <div className="flex space-x-1">
+                <div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"></div>
+                <div
+                  className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div ref={messagesEndRef} />
     </div>
   );

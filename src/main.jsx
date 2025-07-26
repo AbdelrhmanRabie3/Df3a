@@ -9,41 +9,44 @@ import { Toaster } from "react-hot-toast";
 import AuthContextProvider from "./contexts/AuthContextProvider.jsx";
 import { UserProvider } from "./contexts/ProfileContext.jsx";
 import ChatContextProvider from "./contexts/ChatContextProvider.jsx";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+const client = new QueryClient();
 createRoot(document.getElementById("root")).render(
   <ThemeContextProvider>
     <AuthContextProvider>
-      <ChatContextProvider>
-        <UserProvider>
-          <Toaster
-            toastOptions={{
-              success: {
-                style: {
-                  background: "var(--primary-brand)",
-                  color: "var(--text-inverse)",
+      <UserProvider>
+        <ChatContextProvider>
+          <QueryClientProvider client={client}>
+            <Toaster
+              toastOptions={{
+                success: {
+                  style: {
+                    background: "var(--primary-brand)",
+                    color: "var(--text-inverse)",
+                  },
+                  iconTheme: {
+                    primary: "var(--surface)",
+                    secondary: "var(--primary-brand)",
+                  },
                 },
-                iconTheme: {
-                  primary: "var(--surface)",
-                  secondary: "var(--primary-brand)",
+                error: {
+                  style: {
+                    background: "#e74c3c",
+                    color: "var(--text-inverse)",
+                  },
+                  iconTheme: {
+                    primary: "var(--surface)",
+                    secondary: "#e74c3c",
+                  },
                 },
-              },
-              error: {
-                style: {
-                  background: "#e74c3c",
-                  color: "var(--text-inverse)",
-                },
-                iconTheme: {
-                  primary: "var(--surface)",
-                  secondary: "#e74c3c",
-                },
-              },
-            }}
-          />
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </UserProvider>
-      </ChatContextProvider>
+              }}
+            />
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ChatContextProvider>
+      </UserProvider>
     </AuthContextProvider>
   </ThemeContextProvider>
 );
