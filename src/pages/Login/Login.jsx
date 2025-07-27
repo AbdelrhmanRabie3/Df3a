@@ -40,12 +40,16 @@ function Login() {
 
       setUser(response.user);
       setToken(response.token);
-      toast.success("Registration successful!");
-      if (response.user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      console.log("Login response user:", response.user);
+      console.log("User role:", response.user.role);
+      toast.success("Login successful!");
+      setTimeout(() => {
+        if (response.user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+      }, 1);
     } catch (error) {
       toast.error("Registration failed. Please try again.");
       setError("root", {
