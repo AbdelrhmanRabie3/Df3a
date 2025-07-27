@@ -184,9 +184,9 @@ function App() {
         <Route
           path="/mentor/booking"
           element={
-            <MentorProtect>
+            <UserProtect>
               <Booking />
-            </MentorProtect>
+            </UserProtect>
           }
         />
         <Route
