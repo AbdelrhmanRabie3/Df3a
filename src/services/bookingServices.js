@@ -20,3 +20,13 @@ export async function createFreeBooking(data) {
     // if (!response.ok) throw new Error('Failed to create free booking');
     return response;
 }
+
+export async function getAvailability(id) {
+    try {
+        const response = await axiosInstance.get(`/mentors/availability/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching availability:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || "Failed to fetch availability");
+    }
+}
