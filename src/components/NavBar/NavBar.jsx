@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import { ThemeContext } from "../../contexts/ThemeContextProvider";
 import { FaEnvelope, FaSun } from "react-icons/fa";
@@ -6,13 +6,20 @@ import { IoMoon } from "react-icons/io5";
 import { AuthContext } from "../../contexts/AuthContextProvider";
 import { ChatContext } from "../../contexts/ChatContextProvider";
 import Cookies from "js-cookie";
+
 function NavBar() {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const { user, setUser, setToken } = useContext(AuthContext);
-  const { getTotalUnreadCount } = useContext(ChatContext);
-  const unreadCount = getTotalUnreadCount();
+  const { getTotalUnreadCount, notification, chats } = useContext(ChatContext);
+  const [unreadCount, setUnreadCount] = useState(0);
   const loggenInUser = JSON.parse(Cookies.get("user") || null);
+
+  useEffect(() => {
+    const count = getTotalUnreadCount();
+    setUnreadCount(count);
+  }, [getTotalUnreadCount, notification, chats]);
+
   const handleLogout = () => {
     setUser(null);
     setToken(null);
@@ -20,6 +27,7 @@ function NavBar() {
     Cookies.remove("user");
     Cookies.remove("token");
   };
+
   return (
     <>
       <nav className="bg-background fixed w-full z-20 top-0 start-0  border-color">
@@ -54,9 +62,9 @@ function NavBar() {
                     />
                   </Link>
 
-                  {/* Unread messages badge */}
+        
                   {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium border-2 border-background">
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium border-2 border-background animate-pulse">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}
@@ -150,7 +158,7 @@ function NavBar() {
               {loggenInUser?.role === "student" && (
                 <Link
                   to={"/studentprofile"}
-                  className="font-poppins text-base font-medium link-primary link-primary:hover cursor-pointer "
+                  className="block py-2 px-3 font-poppins text-base font-medium link-primary link-primary:hover md:p-0 "
                 >
                   Profile
                 </Link>
@@ -158,7 +166,7 @@ function NavBar() {
               {loggenInUser?.role === "mentor" && (
                 <Link
                   to={"/mentordashboard"}
-                  className="font-poppins text-base font-medium link-primary link-primary:hover cursor-pointer "
+                  className="block py-2 px-3 font-poppins text-base font-medium link-primary link-primary:hover md:p-0 "
                 >
                   Dashboard
                 </Link>

@@ -12,39 +12,31 @@ function MessageInput({
   const typingTimeoutRef = useRef(null);
 
   const handleInputChange = (e) => {
-    console.log("=== INPUT CHANGED ===");
-    console.log("Input value:", e.target.value);
-    console.log("isUserTyping before:", isUserTyping);
-    
     setNewMessage(e.target.value);
 
     if (!isUserTyping) {
       console.log("User started typing - calling handleTyping");
       setIsUserTyping(true);
-      handleTyping(isUserTyping); 
-    } else {
-      console.log("User already typing - not calling handleTyping again");
+      handleTyping();
     }
-
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-
     typingTimeoutRef.current = setTimeout(() => {
       console.log("Typing timeout reached - calling handleStopTyping");
       setIsUserTyping(false);
-      handleStopTyping(isUserTyping);
+      handleStopTyping();
     }, 1000);
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      
+
       console.log("Enter pressed - stopping typing and sending message");
-      
+
       if (isUserTyping) {
         setIsUserTyping(false);
         handleStopTyping();
@@ -52,7 +44,7 @@ function MessageInput({
           clearTimeout(typingTimeoutRef.current);
         }
       }
-      
+
       handleSendMessage(e);
     }
   };
@@ -66,22 +58,21 @@ function MessageInput({
   }, []);
 
   return (
-    <div className="p-4 bg-surface border-t border-border">
+    <div className="p-2 md:p-4 bg-surface border-t border-border">
       <form onSubmit={handleSendMessage} className="relative flex items-center">
         <input
-          className="w-full pl-12 pr-28 py-3 rounded-full bg-input text-primary placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary-brand transition-shadow"
+          className="w-full pl-4 pr-12 md:pl-12 md:pr-28 py-2 md:py-3 rounded-full bg-input text-primary placeholder-secondary text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-primary-brand transition-shadow"
           placeholder="Type your message..."
           type="text"
           value={newMessage}
           onChange={handleInputChange}
-          onKeyPress={handleKeyPress} // Make sure this is onKeyPress, not onKeyDown
+          onKeyPress={handleKeyPress}
         />
-        <div className="absolute left-0 inset-y-0 flex items-center pl-4"></div>
         <button
           type="submit"
-          className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 bg-primary-brand rounded-full text-text-inverse hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-brand transition-transform active:scale-95"
+          className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 md:h-10 md:w-10 bg-primary-brand rounded-full text-text-inverse hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-brand transition-transform active:scale-95"
         >
-          <IoSend className="w-5 h-5" />
+          <IoSend className="w-4 h-4 md:w-5 md:h-5" />
         </button>
       </form>
     </div>

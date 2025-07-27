@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../contexts/AuthContextProvider";
+import { SocketContext } from "../../contexts/SocketContext";
 import { sendNewMessage, getChatMessages } from "../../services/chatServices";
 import EmptyChat from "./EmptyChat";
 import MessageInput from "./MessageInput";
@@ -7,13 +8,13 @@ import MessageList from "./MessageList";
 import ChatSidebar from "./ChatSideBar";
 import NavBar from "./../../components/NavBar/NavBar";
 import { ChatContext } from "../../contexts/ChatContextProvider";
-import { io } from "socket.io-client";
+import { IoArrowBack } from "react-icons/io5";
 
-const URL = "http://localhost:5000";
-let socket, selectedChatCompare;
+let selectedChatCompare;
 
 function Chat() {
   const { user } = useContext(AuthContext);
+  const { socket, socketConnected } = useContext(SocketContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,7 +22,7 @@ function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const {
     currentChat,
     setCurrentChat,
@@ -34,77 +35,56 @@ function Chat() {
     markChatAsRead,
   } = useContext(ChatContext);
 
+  // Handle window resize
   useEffect(() => {
-    if (user?._id) {
-      socket = io(URL);
-      socket.emit("setup", user);
-      socket.on("connected", () => setSocketConnected(true));
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-      return () => {
-        socket.disconnect();
-      };
-    }
-  }, [user]);
 
   useEffect(() => {
     selectedChatCompare = currentChat;
     setLoading(false);
   }, [currentChat]);
 
+
   useEffect(() => {
     if (socket) {
-      const handleMessageReceived = (newMessageReceived) => {
-        const chatId = newMessageReceived.chat._id;
+      const handleMessageForCurrentChat = (newMessageReceived) => {
 
-        if (!selectedChatCompare || selectedChatCompare._id !== chatId) {
-          console.log("New message in different chat:", newMessageReceived);
-
-          if (newMessageReceived.sender._id !== user._id) {
-            addNotification(newMessageReceived);
-          }
-
-          setChats((prevChats) =>
-            prevChats.map((chat) =>
-              chat._id === chatId
-                ? {
-                    ...chat,
-                    latestMessage: {
-                      ...newMessageReceived,
-                      readBy:
-                        newMessageReceived.sender._id === user._id
-                          ? [user._id]
-                          : [],
-                    },
-                  }
-                : chat
-            )
-          );
-        } else {
+        if (
+          selectedChatCompare &&
+          selectedChatCompare._id === newMessageReceived.chat._id
+        ) {
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
-
-          setChats((prevChats) =>
-            prevChats.map((chat) =>
-              chat._id === chatId
-                ? {
-                    ...chat,
-                    latestMessage: {
-                      ...newMessageReceived,
-                      readBy: [user._id],
-                    },
-                  }
-                : chat
-            )
-          );
         }
       };
 
+      socket.on("message received", handleMessageForCurrentChat);
+
+      return () => {
+        socket.off("message received", handleMessageForCurrentChat);
+      };
+    }
+  }, [socket, selectedChatCompare]);
+
+  
+  useEffect(() => {
+    if (socket) {
       const handleTyping = (data) => {
         if (!data || !data.user || !data.user._id) {
           setIsTyping(false);
           setTypingUser("");
           return;
         }
-        if (data.user._id !== user._id) {
+        if (
+          selectedChatCompare &&
+          data.room === selectedChatCompare._id &&
+          data.user._id !== user._id
+        ) {
           setIsTyping(true);
           setTypingUser(data.userName);
         }
@@ -116,23 +96,25 @@ function Chat() {
           setTypingUser("");
           return;
         }
-        if (data.user._id !== user._id) {
+        if (
+          selectedChatCompare &&
+          data.room === selectedChatCompare._id &&
+          data.user._id !== user._id
+        ) {
           setIsTyping(false);
           setTypingUser("");
         }
       };
 
-      socket.on("message received", handleMessageReceived);
       socket.on("typing", handleTyping);
       socket.on("stop typing", handleStopTyping);
 
       return () => {
-        socket.off("message received", handleMessageReceived);
         socket.off("typing", handleTyping);
         socket.off("stop typing", handleStopTyping);
       };
     }
-  }, [socket, selectedChatCompare, addNotification, setChats, user?._id]);
+  }, [socket, selectedChatCompare, user?._id]);
 
   const handleChatSelect = async (chat) => {
     setCurrentChat(chat);
@@ -157,10 +139,17 @@ function Chat() {
       console.error("Failed to fetch messages:", error);
     }
   };
+
+  const handleBackClick = () => {
+    setCurrentChat(null);
+    setSidebarOpen(false);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
     if (newMessage.trim() === "" || !currentChat) return;
+
     if (socket && currentChat) {
       socket.emit("stop typing", {
         room: currentChat._id,
@@ -168,6 +157,7 @@ function Chat() {
         userName: user.name || user.username,
       });
     }
+
     try {
       const res = await sendNewMessage(newMessage, currentChat._id);
       console.log("Message sent:", res);
@@ -178,6 +168,7 @@ function Chat() {
 
       setNewMessage("");
       setMessages((prevMessages) => [...prevMessages, res]);
+
 
       const existingChat = chats.find((chat) => chat._id === currentChat._id);
 
@@ -197,8 +188,8 @@ function Chat() {
 
         setChats((prevChats) => [newChatForList, ...prevChats]);
       } else {
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
+        setChats((prevChats) => {
+          const updatedChats = prevChats.map((chat) =>
             chat._id === currentChat._id
               ? {
                   ...chat,
@@ -209,8 +200,19 @@ function Chat() {
                   updatedAt: new Date().toISOString(),
                 }
               : chat
-          )
-        );
+          );
+
+
+          const currentChatIndex = updatedChats.findIndex(
+            (chat) => chat._id === currentChat._id
+          );
+          if (currentChatIndex > 0) {
+            const [updatedChat] = updatedChats.splice(currentChatIndex, 1);
+            return [updatedChat, ...updatedChats];
+          }
+
+          return updatedChats;
+        });
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -245,50 +247,34 @@ function Chat() {
 
   const handleTyping = () => {
     if (socket && currentChat) {
-      socket.emit("typing", currentChat._id);
+      socket.emit("typing", {
+        room: currentChat._id,
+        user: user,
+        userName: user.name || user.username,
+      });
     }
   };
 
   const handleStopTyping = () => {
     if (socket && currentChat) {
-      socket.emit("stop typing", currentChat._id);
+      socket.emit("stop typing", {
+        room: currentChat._id,
+        user: user,
+        userName: user.name || user.username,
+      });
     }
   };
-
-  useEffect(() => {
-    if (!socket) return;
-    const handleMessageReceived = (newMessageReceived) => {
-      if (!currentChat || currentChat._id !== newMessageReceived.chat._id) {
-        // Show notification
-      } else {
-        setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
-      }
-    };
-    const handleTypingEvent = () => {
-      setIsTyping(true);
-    };
-    const handleStopTypingEvent = () => {
-      setIsTyping(false);
-    };
-    socket.on("message received", handleMessageReceived);
-    socket.on("typing", handleTypingEvent);
-    socket.on("stop typing", handleStopTypingEvent);
-    return () => {
-      socket.off("message received", handleMessageReceived);
-      socket.off("typing", handleTypingEvent);
-      socket.off("stop typing", handleStopTypingEvent);
-    };
-  }, [currentChat]);
 
   return (
     <>
       <NavBar />
-      <div className="pt-20 pb-8 px-4 md:px-8 min-h-screen bg-background">
-        <div className="flex h-[calc(100vh-120px)] antialiased text-primary bg-surface rounded-lg shadow-default overflow-hidden">
+      <div className="pt-16 md:pt-20 pb-0 md:pb-8 px-0 md:px-8 min-h-screen bg-background">
+        <div className="flex h-[calc(100vh-64px)] md:h-[calc(100vh-120px)] antialiased text-primary bg-surface md:rounded-lg shadow-default overflow-hidden">
+         
           <div
-            className={`md:block ${
-              sidebarOpen ? "block" : "hidden"
-            } fixed md:relative z-20 h-full`}
+            className={`${isMobileView && currentChat ? "hidden" : "block"} ${
+              isMobileView ? "w-full" : "md:block"
+            } md:w-80 lg:w-96 h-full`}
           >
             <ChatSidebar
               chats={chats}
@@ -303,9 +289,68 @@ function Chat() {
             />
           </div>
 
-          <main className="flex-1 flex flex-col w-full">
+
+          <main
+            className={`${
+              isMobileView && !currentChat ? "hidden" : "flex"
+            } flex-1 flex flex-col w-full`}
+          >
             {currentChat ? (
               <>
+         
+                {isMobileView && (
+                  <div className="flex items-center gap-3 p-4 bg-surface border-b border-border">
+                    <button
+                      onClick={handleBackClick}
+                      className="p-2 rounded-full hover:bg-background transition-colors"
+                    >
+                      <IoArrowBack className="w-5 h-5" />
+                    </button>
+                    <div className="flex items-center gap-3 flex-1">
+                      <img
+                        src={getOtherUser(currentChat).image}
+                        alt="User avatar"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-primary">
+                          {currentChat.isGroupChat
+                            ? currentChat.chatName
+                            : getOtherUser(currentChat).name}
+                        </h3>
+                        {isTyping && (
+                          <p className="text-xs text-secondary">typing...</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Desktop Chat Header */}
+                {!isMobileView && (
+                  <div className="p-4 bg-surface border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={getOtherUser(currentChat).image}
+                        alt="User avatar"
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-lg text-primary">
+                          {currentChat.isGroupChat
+                            ? currentChat.chatName
+                            : getOtherUser(currentChat).name}
+                        </h3>
+                        {isTyping && (
+                          <p className="text-sm text-secondary">
+                            {typingUser} is typing...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <MessageList
                   messages={messages}
                   user={user}
@@ -313,6 +358,7 @@ function Chat() {
                   getOtherUser={getOtherUser}
                   formatTime={formatTime}
                   isTyping={isTyping}
+                  typingUser={typingUser}
                 />
 
                 <MessageInput
@@ -324,7 +370,7 @@ function Chat() {
                 />
               </>
             ) : (
-              <EmptyChat setSidebarOpen={setSidebarOpen} />
+              !isMobileView && <EmptyChat setSidebarOpen={setSidebarOpen} />
             )}
           </main>
         </div>
