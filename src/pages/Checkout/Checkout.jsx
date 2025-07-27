@@ -173,158 +173,169 @@ const Checkout = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <>
       <NavBar />
-      <h2 className="text-2xl font-bold text-primary mb-6">Checkout</h2>
-      <section className="grid md:grid-cols-2 gap-6">
-        {/* Left Column: Booking Summary */}
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-primary">
-              Booking Summary
-            </h2>
-            <div className="bg-surface p-6 rounded-xl shadow-lg space-y-4 border border-default">
-              <div className="flex items-center gap-4">
-                <img
-                  alt={sessionTitle}
-                  className="w-16 h-16 rounded-full object-cover"
-                  src={sessionImage}
-                />
-                <div>
-                  <p className="font-semibold text-lg text-primary">
-                    {isWorkshop ? mentorName : `Session with ${mentorName}`}
-                  </p>
-                  <p className="text-sm text-secondary">{mentorTitle}</p>
-                </div>
-              </div>
-              <div className="border-t border-default my-4"></div>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-secondary">Date:</span>
-                  <span className="font-medium text-primary">{slot?.date}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-secondary">Day:</span>
-                  <span className="font-medium text-primary">{slot?.day}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-secondary">Time:</span>
-                  <span className="font-medium text-primary">
-                    {isWorkshop
-                      ? time
-                      : `${slot?.time.start} - ${slot?.time.end}`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-secondary">Session Type:</span>
-                  <span className="font-medium text-primary">
-                    {isWorkshop ? sessionType : "1 : 1"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-secondary">Price:</span>
-                  <span className="font-medium text-primary">
-                    {isWorkshop
-                      ? `${sessionPrice} EGP`
-                      : `$${Number(sessionPrice).toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="border-t border-default my-2"></div>
-                <div className="flex justify-between text-base font-bold">
-                  <span className="text-primary">Total:</span>
-                  <span className="text-brand">
-                    {isWorkshop
-                      ? `${sessionPrice} EGP`
-                      : `$${Number(sessionPrice).toFixed(2)}`}
-                  </span>
+      <div className="w-full bg-background">
+        <div className="max-w-4xl mx-auto p-6 bg-background">
+          <h2 className="text-2xl font-bold text-primary mb-6">Checkout</h2>
+          <h2 className="text-xl font-semibold mb-4 text-primary">
+            Booking Summary
+          </h2>
+          <section className="grid md:grid-cols-2 gap-6">
+            {/* Left Column: Booking Summary */}
+            <div className="space-y-6">
+              <div>
+                <div className="bg-surface p-6 rounded-xl shadow-lg space-y-4 border border-default">
+                  <div className="flex items-center gap-4">
+                    <img
+                      alt={sessionTitle}
+                      className="w-16 h-16 rounded-full object-cover"
+                      src={sessionImage}
+                    />
+                    <div>
+                      <p className="font-semibold text-lg text-primary">
+                        {isWorkshop ? mentorName : `Session with ${mentorName}`}
+                      </p>
+                      <p className="text-sm text-secondary">{mentorTitle}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-default my-4"></div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Date:</span>
+                      <span className="font-medium text-primary">
+                        {slot?.date}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Day:</span>
+                      <span className="font-medium text-primary">
+                        {slot?.day}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Time:</span>
+                      <span className="font-medium text-primary">
+                        {isWorkshop
+                          ? time
+                          : `${slot?.time.start} - ${slot?.time.end}`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Session Type:</span>
+                      <span className="font-medium text-primary">
+                        {isWorkshop ? sessionType : "1 : 1"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Price:</span>
+                      <span className="font-medium text-primary">
+                        {isWorkshop
+                          ? `${sessionPrice} EGP`
+                          : `$${Number(sessionPrice).toFixed(2)}`}
+                      </span>
+                    </div>
+                    <div className="border-t border-default my-2"></div>
+                    <div className="flex justify-between text-base font-bold">
+                      <span className="text-primary">Total:</span>
+                      <span className="text-brand">
+                        {isWorkshop
+                          ? `${sessionPrice} EGP`
+                          : `$${Number(sessionPrice).toFixed(2)}`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        {/* Right Column: Card Details */}
-        <div>
-          <div className="bg-surface p-6 rounded-xl shadow-lg border border-default">
-            <h2 className="text-xl font-semibold mb-4 text-primary">
-              Card Details
-            </h2>
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-secondary">
-                  Card Number
-                </label>
-                <div className="p-3 border border-input rounded-lg bg-white">
-                  <CardNumberElement
-                    options={{
-                      style: {
-                        base: {
-                          fontSize: "16px",
-                          color: "#32325d",
-                          "::placeholder": { color: "#a0aec0" },
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-secondary">
-                    Expiration Date
-                  </label>
-                  <div className="p-3 border border-input rounded-lg bg-white">
-                    <CardExpiryElement
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: "16px",
-                            color: "#32325d",
-                            "::placeholder": { color: "#a0aec0" },
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-secondary">
-                    CVC
-                  </label>
-                  <div className="p-3 border border-input rounded-lg bg-white">
-                    <CardCvcElement
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: "16px",
-                            color: "#32325d",
-                            "::placeholder": { color: "#a0aec0" },
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6">
-                <button
-                  type="submit"
-                  disabled={loading || !clientSecret}
-                  onClick={handlePay}
-                  className={`w-full py-3 px-4 rounded cursor-pointer text-white font-medium ${
-                    loading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-primary hover:bg-primary-dark"
-                  }`}
+            {/* Right Column: Card Details */}
+            <div>
+              <div className="bg-surface p-6 rounded-xl shadow-lg border border-default">
+                <h2 className="text-xl font-semibold mb-4 text-primary">
+                  Card Details
+                </h2>
+                <form
+                  className="space-y-6"
+                  onSubmit={(e) => e.preventDefault()}
                 >
-                  {loading ? "Processing..." : "Pay & Book Now"}
-                </button>
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-secondary">
+                      Card Number
+                    </label>
+                    <div className="p-3 border border-input rounded-lg bg-white">
+                      <CardNumberElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: "16px",
+                              color: "#32325d",
+                              "::placeholder": { color: "#a0aec0" },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-secondary">
+                        Expiration Date
+                      </label>
+                      <div className="p-3 border border-input rounded-lg bg-white">
+                        <CardExpiryElement
+                          options={{
+                            style: {
+                              base: {
+                                fontSize: "16px",
+                                color: "#32325d",
+                                "::placeholder": { color: "#a0aec0" },
+                              },
+                            },
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-secondary">
+                        CVC
+                      </label>
+                      <div className="p-3 border border-input rounded-lg bg-white">
+                        <CardCvcElement
+                          options={{
+                            style: {
+                              base: {
+                                fontSize: "16px",
+                                color: "#32325d",
+                                "::placeholder": { color: "#a0aec0" },
+                              },
+                            },
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <button
+                      type="submit"
+                      disabled={loading || !clientSecret}
+                      onClick={handlePay}
+                      className={`w-full py-3 px-4 rounded cursor-pointer text-white font-medium ${
+                        loading
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-primary hover:bg-primary-dark"
+                      }`}
+                    >
+                      {loading ? "Processing..." : "Pay & Book Now"}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
       <Footer />
-    </div>
+    </>
   );
 };
 

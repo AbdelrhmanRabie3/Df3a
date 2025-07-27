@@ -183,7 +183,7 @@ export default function CreateWorkshop() {
   };
   const minDateTime = getTomorrowDateTimeLocal();
 
-  return (
+  return user?.verified === true ? (
     <main className=" mx-auto z-10 bg-surface backdrop-blur-sm pb-4 px-6 rounded pt-12">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-12">
         {/* Form */}
@@ -575,5 +575,9 @@ export default function CreateWorkshop() {
         {/* End Preview */}
       </div>
     </main>
+  ) : (
+    <div className="text-center text-red-500 mt-20 text-3xl bg-surface h-24">
+      Wait us to verify your account.
+    </div>
   );
 }
