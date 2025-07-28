@@ -409,7 +409,7 @@ function Booking(props) {
                     <div key={idx} className="border-b border-default pb-3">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-primary">
-                          {review.reviewerName || "Anonymous"}
+                          {review.author?.name || "Anonymous"}
                         </span>
                         <span className="text-amber-500 font-bold">
                           {"★".repeat(Math.round(review.rating || 0))}
