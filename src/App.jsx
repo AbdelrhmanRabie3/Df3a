@@ -41,6 +41,7 @@ import { loadStripe } from "@stripe/stripe-js";
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 import Reports from "./pages/Admin/Reports";
+import Payments from "./pages/Admin/Payments";
 import AdminProtect from "./components/Protect/AdminProtect";
 import NotFound from "./components/NotFound/NotFound";
 import MentorProtect from "./components/Protect/MentorProtect";
@@ -178,6 +179,14 @@ function App() {
           element={
             <AdminProtect>
               <Reports />
+            </AdminProtect>
+          }
+        />
+        <Route
+          path="/admin/payments"
+          element={
+            <AdminProtect>
+              <Payments />
             </AdminProtect>
           }
         />
