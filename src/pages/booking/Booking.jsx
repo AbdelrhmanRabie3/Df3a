@@ -2,15 +2,17 @@ import { useState, useEffect } from "react";
 import NavBar from "../../components/NavBar/NavBar";
 import { useLocation } from "react-router";
 import { useNavigate } from "react-router";
-import { createFreeBooking, getAvailability } from "../../services/bookingServices";
-import { toast } from 'react-toastify';
+import {
+  createFreeBooking,
+  getAvailability,
+} from "../../services/bookingServices";
+import { toast } from "react-toastify";
 import { getReviewsByTarget } from "../../services/getAllData";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import Footer from './../../components/Footer/Footer';
+import Footer from "./../../components/Footer/Footer";
 
 function Booking(props) {
-
   // Hooks
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,9 +27,8 @@ function Booking(props) {
     bio: mentorBio = "",
     expertise: mentorExpertise = [],
     languages: mentorLanguages = [],
-    availability: mentorAvailability = []
+    availability: mentorAvailability = [],
   } = mentor;
-
 
   const [selectedSlot, setSelectedSlot] = useState({ date: "", time: null });
   const [selectedDay, setSelectedDay] = useState(null);
@@ -35,19 +36,27 @@ function Booking(props) {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   // Availability
-  const [availability, setAvailability] = useState(
-    []
-  );
+  const [availability, setAvailability] = useState([]);
 
   // Filtered latest 5 days
   const latestAvailability = availability
-    .filter(slot => Array.isArray(slot.slots) && slot.slots.length > 0)
+    .filter((slot) => Array.isArray(slot.slots) && slot.slots.length > 0)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 4);
 
   // Reviews
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+
+  // Pagination state for reviews
+  const [currentPage, setCurrentPage] = useState(1);
+  const reviewsPerPage = 2;
+
+  // Calculate pagination
+  const indexOfLastReview = currentPage * reviewsPerPage;
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
+  const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
+  const totalPages = Math.ceil(reviews.length / reviewsPerPage);
 
   // Total price (fixed session time)
   const totalPrice = price.toFixed(2);
@@ -79,8 +88,12 @@ function Booking(props) {
     };
     fetchMentorReviews();
     fetchAvailability();
-
   }, [mentor]);
+
+  // Reset current page when reviews change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [reviews]);
 
   useEffect(() => {
     if (showModal) {
@@ -93,10 +106,8 @@ function Booking(props) {
     };
   }, [showModal]);
 
-
-  // handler of free booking 
+  // handler of free booking
   const handleFreeBooking = async () => {
-
     const bookingData = {
       mentorId: mentor._id,
       date: selectedSlot.date,
@@ -114,7 +125,8 @@ function Booking(props) {
             if (dayObj.date === selectedSlot.date) {
               const newSlots = dayObj.slots.filter(
                 (slot) =>
-                  slot.start !== selectedSlot.time.start || slot.end !== selectedSlot.time.end
+                  slot.start !== selectedSlot.time.start ||
+                  slot.end !== selectedSlot.time.end
               );
               return { ...dayObj, slots: newSlots };
             }
@@ -126,7 +138,9 @@ function Booking(props) {
     } catch (err) {
       console.log(err);
     } finally {
-      toast.success("Booking successful! Your session is confirmed.", { position: 'top-center' });
+      toast.success("Booking successful! Your session is confirmed.", {
+        position: "top-center",
+      });
       navigate("/studentProfile");
     }
   };
@@ -174,9 +188,7 @@ function Booking(props) {
                   </div>
                   <p className="text-lg text-secondary">{mentorTitle}</p>
                   <p className="text-base font-semibold text-brand mt-1">
-                    {price === 0
-                      ? "0 EGP/hr (Free)"
-                      : `${price} EGP/hr`}
+                    {price === 0 ? "0 EGP/hr (Free)" : `${price} EGP/hr`}
                   </p>
                   <div className="flex items-center justify-center sm:justify-start mt-2 gap-1">
                     {/* Star Icon */}
@@ -221,7 +233,9 @@ function Booking(props) {
             </div>
             {/* Availability Time Card */}
             <div className="card p-6">
-              <h3 className="text-xl font-bold mb-6 text-primary">Availability Time</h3>
+              <h3 className="text-xl font-bold mb-6 text-primary">
+                Availability Time
+              </h3>
               {latestAvailability.length === 0 ? (
                 <div className="text-center text-secondary py-8">
                   Mentor not available now
@@ -234,10 +248,11 @@ function Booking(props) {
                       <button
                         key={day._id}
                         onClick={() => setSelectedDay(day)}
-                        className={`px-4 py-2 rounded-lg border ${selectedDay?.date === day.date
-                          ? 'bg-green-500 text-white'
-                          : 'bg-surface text-primary'
-                          }`}
+                        className={`px-4 py-2 rounded-lg border ${
+                          selectedDay?.date === day.date
+                            ? "bg-green-500 text-white"
+                            : "bg-surface text-primary"
+                        }`}
                       >
                         <div className="font-semibold">{day.day}</div>
                         <div className="text-sm">{day.date}</div>
@@ -260,10 +275,11 @@ function Booking(props) {
                       {selectedDay.slots.map((slot) => (
                         <button
                           key={slot._id}
-                          className={`px-4 py-2 rounded-lg font-medium text-white ${selectedSlot?.time?.start === slot.start
-                            ? 'bg-green-600 ring-2 ring-brand'
-                            : 'bg-green-500 hover:bg-green-600'
-                            }`}
+                          className={`px-4 py-2 rounded-lg font-medium text-white ${
+                            selectedSlot?.time?.start === slot.start
+                              ? "bg-green-600 ring-2 ring-brand"
+                              : "bg-green-500 hover:bg-green-600"
+                          }`}
                           onClick={() =>
                             setSelectedSlot({
                               date: selectedDay.date,
@@ -277,11 +293,9 @@ function Booking(props) {
                       ))}
                     </div>
                   )}
-
                 </>
               )}
             </div>
-
 
             {/* Calendar Modal */}
             {showModal && (
@@ -289,7 +303,7 @@ function Booking(props) {
                 className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
                 onClick={() => {
                   setShowModal(false);
-                  document.body.style.overflow = 'auto';
+                  document.body.style.overflow = "auto";
                 }}
               >
                 <div
@@ -301,7 +315,7 @@ function Booking(props) {
                     className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-red-600 text-2xl"
                     onClick={() => {
                       setShowModal(false);
-                      document.body.style.overflow = 'auto';
+                      document.body.style.overflow = "auto";
                     }}
                     aria-label="Close"
                   >
@@ -317,22 +331,26 @@ function Booking(props) {
                   <div className="flex justify-center">
                     <Calendar
                       onClickDay={(value) => {
-                        const dateStr = value.toLocaleDateString('en-CA');
-                        const selected = availability.find((a) => a.date === dateStr);
+                        const dateStr = value.toLocaleDateString("en-CA");
+                        const selected = availability.find(
+                          (a) => a.date === dateStr
+                        );
                         if (selected) setSelectedDay(selected);
                       }}
                       tileDisabled={({ date }) => {
-                        const dateStr = date.toLocaleDateString('en-CA');
+                        const dateStr = date.toLocaleDateString("en-CA");
                         return !availability.some((a) => a.date === dateStr);
                       }}
                       tileClassName={({ date }) => {
-                        const dateStr = date.toLocaleDateString('en-CA');
+                        const dateStr = date.toLocaleDateString("en-CA");
                         return availability.some((a) => a.date === dateStr)
-                          ? 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 font-semibold rounded'
-                          : '';
+                          ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 font-semibold rounded"
+                          : "";
                       }}
                       minDate={new Date()}
-                      maxDate={new Date(new Date().setMonth(new Date().getMonth() + 2))}
+                      maxDate={
+                        new Date(new Date().setMonth(new Date().getMonth() + 2))
+                      }
                       className="rounded-lg shadow-sm p-2 dark:bg-gray-800"
                     />
                   </div>
@@ -355,10 +373,11 @@ function Booking(props) {
                                   time: slot,
                                 })
                               }
-                              className={`px-4 py-2 text-sm rounded-lg font-medium transition ${selectedSlot?.time?.start === slot.start
-                                ? 'bg-brand text-black ring-2 ring-brand-dark'
-                                : 'bg-surface text-primary dark:text-white hover:bg-brand hover:text-white'
-                                }`}
+                              className={`px-4 py-2 text-sm rounded-lg font-medium transition ${
+                                selectedSlot?.time?.start === slot.start
+                                  ? "bg-brand text-black ring-2 ring-brand-dark"
+                                  : "bg-surface text-primary dark:text-white hover:bg-brand hover:text-white"
+                              }`}
                             >
                               {slot.start} - {slot.end}
                             </button>
@@ -378,9 +397,9 @@ function Booking(props) {
                       onClick={() => {
                         if (selectedSlot) {
                           setShowModal(false);
-                          document.body.style.overflow = 'auto';
+                          document.body.style.overflow = "auto";
                         } else {
-                          alert('Please select a time slot.');
+                          alert("Please select a time slot.");
                         }
                       }}
                       className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold transition"
@@ -392,41 +411,103 @@ function Booking(props) {
               </div>
             )}
 
-
-
-
-
             {/* Reviews Section */}
-            <div className="card p-6 mt-4 h-32 overflow-y-auto">
+            <div className="card p-6 mt-4">
               <h3 className="text-xl font-bold mb-4 text-primary">Reviews</h3>
               {loadingReviews ? (
                 <div className="text-secondary">Loading reviews...</div>
               ) : reviews.length === 0 ? (
                 <div className="text-secondary">No reviews yet.</div>
               ) : (
-                <div className="space-y-4">
-                  {reviews.map((review, idx) => (
-                    <div key={idx} className="border-b border-default pb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-primary">
-                          {review.author?.name || "Anonymous"}
-                        </span>
-                        <span className="text-amber-500 font-bold">
-                          {"★".repeat(Math.round(review.rating || 0))}
-                        </span>
+                <>
+                  <div className="space-y-4 mb-4">
+                    {currentReviews.map((review, idx) => (
+                      <div key={idx} className="border-b border-default pb-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-primary">
+                            {review.author?.name || "Anonymous"}
+                          </span>
+                          <span className="text-amber-500 font-bold">
+                            {"★".repeat(Math.round(review.rating || 0))}
+                          </span>
+                        </div>
+                        <div className="text-secondary text-sm">
+                          {review.comment}
+                        </div>
                       </div>
-                      <div className="text-secondary text-sm">
-                        {review.comment}
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 rounded text-sm font-medium ${
+                          currentPage === 1
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-primary text-white hover:bg-primary-dark"
+                        }`}
+                      >
+                        Previous
+                      </button>
+
+                      <div className="flex gap-1">
+                        {Array.from(
+                          { length: totalPages },
+                          (_, i) => i + 1
+                        ).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 rounded text-sm font-medium ${
+                              currentPage === page
+                                ? "bg-brand text-black"
+                                : "bg-surface text-primary hover:bg-gray-100"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
                       </div>
+
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-1 rounded text-sm font-medium ${
+                          currentPage === totalPages
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-primary text-white hover:bg-primary-dark"
+                        }`}
+                      >
+                        Next
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+
+                  {/* Page Info */}
+                  {totalPages > 1 && (
+                    <div className="text-center text-sm text-secondary mt-2">
+                      Page {currentPage} of {totalPages} ({reviews.length} total
+                      reviews)
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
           {/* Right Side - Booking Summary */}
           <div className="card p-6">
-            <h3 className="text-xl font-bold mb-4 text-primary">Booking Summary</h3>
+            <h3 className="text-xl font-bold mb-4 text-primary">
+              Booking Summary
+            </h3>
 
             <div className="space-y-4">
               {/* Mentor */}
@@ -440,7 +521,7 @@ function Booking(props) {
                 <span className="text-secondary">Date</span>
                 <span className="font-semibold text-primary">
                   {selectedSlot?.date
-                    ? new Date(selectedSlot.date).toLocaleDateString('en-GB') // Format date dd/mm/yyyy
+                    ? new Date(selectedSlot.date).toLocaleDateString("en-GB") // Format date dd/mm/yyyy
                     : "---"}
                 </span>
               </div>
@@ -450,7 +531,9 @@ function Booking(props) {
                 <span className="text-secondary">Day</span>
                 <span className="font-semibold text-primary">
                   {selectedSlot?.date
-                    ? new Date(selectedSlot.date).toLocaleDateString('en-US', { weekday: 'long' })
+                    ? new Date(selectedSlot.date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                      })
                     : "---"}
                 </span>
               </div>
@@ -487,14 +570,17 @@ function Booking(props) {
 
             {/* Checkout Button */}
             <button
-              className={`btn-primary px-4 py-2 rounded w-full mt-6 border-2 ${!selectedSlot.date || !selectedSlot.time
-                ? 'bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed'
-                : 'bg-primary text-white border-primary'
-                }`}
+              className={`btn-primary px-4 py-2 rounded w-full mt-6 border-2 ${
+                !selectedSlot.date || !selectedSlot.time
+                  ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                  : "bg-primary text-white border-primary"
+              }`}
               // disabled={!selectedSlot.date || !selectedSlot.time}
               onClick={() => {
                 if (!selectedSlot.date || !selectedSlot.time) {
-                  toast.error("please select day and time", { position: 'top-center' });
+                  toast.error("please select day and time", {
+                    position: "top-center",
+                  });
                   return;
                 }
 
@@ -519,7 +605,7 @@ function Booking(props) {
                 }
               }}
             >
-              {Number(totalPrice) === 0 ? 'Confirm Booking' : 'Checkout'}
+              {Number(totalPrice) === 0 ? "Confirm Booking" : "Checkout"}
             </button>
 
             {/* Terms */}
@@ -530,8 +616,6 @@ function Booking(props) {
             {/* Stretch lower area */}
             <div className="h-32"></div>
           </div>
-
-
         </div>
       </main>
       <Footer></Footer>
